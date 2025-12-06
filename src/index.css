@@ -3835,6 +3835,12 @@
   }
 
   @media (hover: hover) {
+    .group-hover\:border-\[\#B93636\]:is(:where(.group):hover *) {
+      border-color: #b93636;
+    }
+  }
+
+  @media (hover: hover) {
     .group-hover\:border-slate-800:is(:where(.group):hover *) {
       border-color: var(--color-slate-800);
     }
@@ -3907,6 +3913,20 @@
   }
 
   @media (hover: hover) {
+    .group-hover\:shadow-\[6px_6px_15px_rgba\(0\,0\,0\,0\.1\)\]:is(:where(.group):hover *) {
+      --tw-shadow: 6px 6px 15px var(--tw-shadow-color, #0000001a);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+  }
+
+  @media (hover: hover) {
+    .group-hover\:shadow-md:is(:where(.group):hover *) {
+      --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, #0000001a), 0 2px 4px -2px var(--tw-shadow-color, #0000001a);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+  }
+
+  @media (hover: hover) {
     .group-hover\:grayscale-0:is(:where(.group):hover *) {
       --tw-grayscale: grayscale(0%);
       filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
@@ -3916,6 +3936,10 @@
   .group-active\:translate-x-1:is(:where(.group):active *) {
     --tw-translate-x: calc(var(--spacing) * 1);
     translate: var(--tw-translate-x) var(--tw-translate-y);
+  }
+
+  .group-active\:border-\[\#B93636\]:is(:where(.group):active *) {
+    border-color: #b93636;
   }
 
   .group-active\:border-slate-800:is(:where(.group):active *) {
@@ -3966,6 +3990,16 @@
     opacity: 1;
   }
 
+  .group-active\:shadow-\[6px_6px_15px_rgba\(0\,0\,0\,0\.1\)\]:is(:where(.group):active *) {
+    --tw-shadow: 6px 6px 15px var(--tw-shadow-color, #0000001a);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
+  .group-active\:shadow-md:is(:where(.group):active *) {
+    --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, #0000001a), 0 2px 4px -2px var(--tw-shadow-color, #0000001a);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+
   .group-active\:grayscale-0:is(:where(.group):active *) {
     --tw-grayscale: grayscale(0%);
     filter: var(--tw-blur, ) var(--tw-brightness, ) var(--tw-contrast, ) var(--tw-grayscale, ) var(--tw-hue-rotate, ) var(--tw-invert, ) var(--tw-saturate, ) var(--tw-sepia, ) var(--tw-drop-shadow, );
@@ -4011,12 +4045,6 @@
   @media (hover: hover) {
     .hover\:border-\[\#999\]:hover {
       border-color: #999;
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:border-\[\#B93636\]:hover {
-      border-color: #b93636;
     }
   }
 
@@ -4075,6 +4103,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-\[\#EAE8E3\]:hover {
+      background-color: #eae8e3;
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-\[\#FF3B30\]:hover {
       background-color: #ff3b30;
     }
@@ -4087,8 +4121,20 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-\[\#e0e0e0\]:hover {
+      background-color: #e0e0e0;
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-\[\#e8e8e8\]:hover {
       background-color: #e8e8e8;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-\[\#ebebeb\]:hover {
+      background-color: #ebebeb;
     }
   }
 
@@ -4101,6 +4147,12 @@
   @media (hover: hover) {
     .hover\:bg-\[\#f5f5f5\]:hover {
       background-color: #f5f5f5;
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-\[\#ffd0d0\]:hover {
+      background-color: #ffd0d0;
     }
   }
 
@@ -4243,8 +4295,8 @@
   }
 
   @media (hover: hover) {
-    .hover\:text-\[\#666\]:hover {
-      color: #666;
+    .hover\:text-\[\#333\]:hover {
+      color: #333;
     }
   }
 
@@ -4309,6 +4361,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:opacity-60:hover {
+      opacity: .6;
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:opacity-70:hover {
       opacity: .7;
     }
@@ -4323,20 +4381,6 @@
   @media (hover: hover) {
     .hover\:opacity-90:hover {
       opacity: .9;
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:shadow-\[6px_6px_15px_rgba\(0\,0\,0\,0\.1\)\]:hover {
-      --tw-shadow: 6px 6px 15px var(--tw-shadow-color, #0000001a);
-      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:shadow-md:hover {
-      --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, #0000001a), 0 2px 4px -2px var(--tw-shadow-color, #0000001a);
-      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
   }
 
@@ -4417,10 +4461,6 @@
 
   .active\:border-\[\#8C8C89\]:active {
     border-color: #8c8c89;
-  }
-
-  .active\:border-\[\#B93636\]:active {
-    border-color: #b93636;
   }
 
   .active\:border-\[\#D6D3CC\]:active {
@@ -4523,6 +4563,10 @@
     background-color: var(--color-slate-100);
   }
 
+  .active\:bg-slate-200:active {
+    background-color: var(--color-slate-200);
+  }
+
   .active\:bg-slate-800:active {
     background-color: var(--color-slate-800);
   }
@@ -4589,16 +4633,6 @@
 
   .active\:opacity-90:active {
     opacity: .9;
-  }
-
-  .active\:shadow-\[6px_6px_15px_rgba\(0\,0\,0\,0\.1\)\]:active {
-    --tw-shadow: 6px 6px 15px var(--tw-shadow-color, #0000001a);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  }
-
-  .active\:shadow-md:active {
-    --tw-shadow: 0 4px 6px -1px var(--tw-shadow-color, #0000001a), 0 2px 4px -2px var(--tw-shadow-color, #0000001a);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
 
   .disabled\:pointer-events-none:disabled {
