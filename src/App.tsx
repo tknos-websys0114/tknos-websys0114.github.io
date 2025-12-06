@@ -4,7 +4,7 @@ import SwipeableDesktop from "./components/SwipeableDesktop";
 import PWAInstaller from "./components/PWAInstaller";
 import PWAIconGenerator from "./components/PWAIconGenerator";
 import LoadingScreen from "./components/LoadingScreen";
-import { usePWA } from "./hooks/usePWA.ts";
+import { usePWA } from "./hooks/usePWA";
 import { db, STORES } from "./utils/db";
 import { getImageCategoryStats, listAllImages, getImage } from "./utils/imageDB";
 
