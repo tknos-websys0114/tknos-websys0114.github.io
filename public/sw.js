@@ -303,6 +303,7 @@ self.addEventListener('message', async (event) => {
             taskId: payload.taskId,
             characterId: payload.characterId,
             messages: newMessages,
+            displayName: payload.displayName, // 传递备注名给前端
           }
         });
       });
