@@ -427,7 +427,7 @@ export default function ChatSettings() {
         <div className="mb-8 flex flex-col items-center">
           <button
             onClick={handleAvatarClick}
-            className="w-24 h-24 rounded-full bg-[#f5f5f5] flex items-center justify-center overflow-hidden active:opacity-70 transition-opacity"
+            className="w-24 h-24 rounded-full bg-[#f5f5f5] flex items-center justify-center overflow-hidden active:opacity-70 hover:opacity-70 transition-opacity"
           >
             {avatarUrl ? (
               <img 
@@ -510,7 +510,7 @@ export default function ChatSettings() {
             </div>
             <button
               onClick={() => setTempSettings({ ...tempSettings, timeAwareness: !tempSettings.timeAwareness })}
-              className={`w-12 h-7 rounded-full transition-colors flex items-center px-0.5 ${
+              className={`w-12 h-7 rounded-full transition-colors flex items-center px-0.5 hover:opacity-80 active:opacity-80 ${
                 tempSettings.timeAwareness ? 'bg-[#7B9E7B]' : 'bg-[#d0d0d0]'
               }`}
             >
@@ -532,7 +532,7 @@ export default function ChatSettings() {
             {localWorldBooks.length > 0 && (
               <button
                 onClick={handleOpenWorldBookSelector}
-                className="w-8 h-8 bg-[#7B9E7B] rounded-full flex items-center justify-center active:opacity-80 transition-opacity"
+                className="w-8 h-8 bg-[#7B9E7B] rounded-full flex items-center justify-center active:opacity-80 hover:opacity-80 transition-opacity"
               >
                 <Plus className="w-5 h-5 text-white" strokeWidth={2} />
               </button>
@@ -557,7 +557,7 @@ export default function ChatSettings() {
                     </span>
                     <button
                       onClick={() => handleRemoveWorldBook(id)}
-                      className="text-[#999] hover:text-[#666] active:text-[#333] transition-colors"
+                      className="text-[#999] hover:text-[#333] active:text-[#333] transition-colors"
                     >
                       <X className="w-5 h-5" strokeWidth={2} />
                     </button>
@@ -573,7 +573,7 @@ export default function ChatSettings() {
           {/* 折叠头部 */}
           <button
             onClick={() => setIsBeautifyExpanded(!isBeautifyExpanded)}
-            className="w-full flex items-center justify-between p-4 bg-[#f5f5f5] rounded-lg active:bg-[#ebebeb] transition-colors"
+            className="w-full flex items-center justify-between p-4 bg-[#f5f5f5] rounded-lg active:bg-[#ebebeb] hover:bg-[#ebebeb] transition-colors"
           >
             <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333]">
               美化设置
@@ -600,7 +600,7 @@ export default function ChatSettings() {
                 </h4>
                 <button
                   onClick={handleBackgroundClick}
-                  className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] active:bg-[#ebebeb] transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] active:bg-[#ebebeb] hover:bg-[#ebebeb] transition-colors flex items-center justify-center gap-2"
                 >
                   <Image className="w-5 h-5 text-[#666]" strokeWidth={2} />
                   <span>{tempSettings.chatBackground ? '更换聊天背景' : '设置聊天背景'}</span>
@@ -635,7 +635,7 @@ export default function ChatSettings() {
                     />
                     <button
                       onClick={handleSavePreset}
-                      className="px-3 py-2 bg-[#7B9E7B] rounded-lg text-white active:opacity-80 transition-opacity flex items-center gap-1.5"
+                      className="px-3 py-2 bg-[#7B9E7B] rounded-lg text-white active:opacity-80 hover:opacity-80 transition-opacity flex items-center gap-1.5"
                     >
                       <Save className="w-4 h-4" strokeWidth={2} />
                       <span className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[13px]">
@@ -658,13 +658,13 @@ export default function ChatSettings() {
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleLoadPreset(preset)}
-                              className="px-2.5 py-1.5 bg-[#7B9E7B] rounded font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[12px] text-white active:opacity-80 transition-opacity"
+                              className="px-2.5 py-1.5 bg-[#7B9E7B] rounded font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[12px] text-white active:opacity-80 hover:opacity-80 transition-opacity"
                             >
                               加载
                             </button>
                             <button
                               onClick={() => handleDeletePreset(preset.id)}
-                              className="p-1.5 bg-[#f0f0f0] rounded text-[#666] active:bg-[#e0e0e0] transition-colors"
+                              className="p-1.5 bg-[#f0f0f0] rounded text-[#666] active:bg-[#e0e0e0] hover:bg-[#e0e0e0] transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                             </button>
@@ -760,7 +760,7 @@ export default function ChatSettings() {
                     ...tempSettings,
                     bubbleStyles: defaultBubbleStyles,
                   })}
-                  className="mt-4 w-full px-4 py-2 bg-white border border-[#d0d0d0] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#666] active:bg-[#f5f5f5] transition-colors"
+                  className="mt-4 w-full px-4 py-2 bg-white border border-[#d0d0d0] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#666] active:bg-[#f5f5f5] hover:bg-[#f5f5f5] transition-colors"
                 >
                   恢复默认样式
                 </button>
@@ -774,7 +774,7 @@ export default function ChatSettings() {
       <div className="px-5 py-4 bg-white border-t border-[#f0f0f0]">
         <button
           onClick={handleSaveSettings}
-          className="w-full py-3 bg-[#7B9E7B] rounded-lg font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-white active:opacity-80 transition-opacity flex items-center justify-center"
+          className="w-full py-3 bg-[#7B9E7B] rounded-lg font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-white active:opacity-80 hover:opacity-80 transition-opacity flex items-center justify-center"
         >
           保存设置
         </button>
@@ -834,7 +834,7 @@ export default function ChatSettings() {
                   <button
                     key={book.id}
                     onClick={() => handleToggleWorldBookInSelector(book.id)}
-                    className="flex items-center gap-3 active:opacity-70 transition-opacity"
+                    className="flex items-center gap-3 active:opacity-70 hover:opacity-70 transition-opacity"
                   >
                     <div 
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${

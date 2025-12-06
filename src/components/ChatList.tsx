@@ -216,7 +216,14 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
     const chat = chats.find(c => c.id === chatId);
     if (chat) {
       // 优先从缓存读取备注名
-      const displayName = getDisplayName(chatId, chat.remark || chat.name);
+      // 如果没有备注且名字是未知角色，尝试查找真实名字
+      let realName = chat.name;
+      if (realName === '未知角色' || !realName) {
+         const char = characters.find(c => c.id === chatId);
+         if (char) realName = char.name;
+      }
+      
+      const displayName = getDisplayName(chatId, chat.remark || realName);
       onOpenChat(chatId, displayName);
     }
   };
@@ -369,7 +376,7 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2 min-w-0">
                             <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[17px] text-[#333] truncate">
-                              {chat.remark || chat.name}
+                              {chat.remark || ((chat.name === '未知角色' || !chat.name) && characters.find(c => c.id === chat.id)?.name) || chat.name}
                             </h3>
                             {chat.memberCount && (
                               <span className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999] flex-shrink-0">

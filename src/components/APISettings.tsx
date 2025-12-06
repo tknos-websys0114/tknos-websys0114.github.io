@@ -357,7 +357,7 @@ export default function APISettings({ onBack }: APISettingsProps) {
                    {availableModels.length > 0 && (
                       <button 
                          onClick={() => setShowModelSelector(!showModelSelector)}
-                         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:bg-slate-200 rounded-none transition-colors"
+                         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-400 active:bg-slate-200 hover:bg-slate-200 rounded-none transition-colors"
                       >
                          <ChevronDown className="w-4 h-4" />
                       </button>

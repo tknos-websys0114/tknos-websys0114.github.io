@@ -170,7 +170,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
       {/* 图片时间组件 */}
       <div className="absolute h-[15%] left-1/2 top-[6.6%] translate-x-[-50%] w-[86%]" data-name="图片时间组件">
         <div 
-          className="absolute inset-0 rounded-[24px] cursor-pointer hover:opacity-80 transition-opacity" 
+          className="absolute inset-0 rounded-[24px] cursor-pointer hover:opacity-80 active:opacity-80 transition-opacity" 
           onClick={handleTimeImageClick}
         >
           {timeImage ? (
@@ -226,7 +226,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
         
         {/* 四张卡片图片 */}
         <div 
-          className="absolute h-[62%] left-[7.3%] rounded-[26px] top-[32.86%] w-[19.66%] cursor-pointer hover:opacity-80 transition-opacity"
+          className="absolute h-[62%] left-[7.3%] rounded-[26px] top-[32.86%] w-[19.66%] cursor-pointer hover:opacity-80 active:opacity-80 transition-opacity"
           onClick={() => handleCardImageClick(0)}
         >
           {cardImage1 ? (
@@ -236,7 +236,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
           )}
         </div>
         <div 
-          className="absolute h-[62%] left-[29.21%] rounded-[26px] top-[33.14%] w-[19.66%] cursor-pointer hover:opacity-80 transition-opacity"
+          className="absolute h-[62%] left-[29.21%] rounded-[26px] top-[33.14%] w-[19.66%] cursor-pointer hover:opacity-80 active:opacity-80 transition-opacity"
           onClick={() => handleCardImageClick(1)}
         >
           {cardImage2 ? (
@@ -246,7 +246,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
           )}
         </div>
         <div 
-          className="absolute h-[62%] left-[51.12%] rounded-[26px] top-[32.86%] w-[19.66%] cursor-pointer hover:opacity-80 transition-opacity"
+          className="absolute h-[62%] left-[51.12%] rounded-[26px] top-[32.86%] w-[19.66%] cursor-pointer hover:opacity-80 active:opacity-80 transition-opacity"
           onClick={() => handleCardImageClick(2)}
         >
           {cardImage3 ? (
@@ -256,7 +256,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
           )}
         </div>
         <div 
-          className="absolute h-[62%] left-[73.03%] rounded-[26px] top-[32.86%] w-[19.66%] cursor-pointer hover:opacity-80 transition-opacity"
+          className="absolute h-[62%] left-[73.03%] rounded-[26px] top-[32.86%] w-[19.66%] cursor-pointer hover:opacity-80 active:opacity-80 transition-opacity"
           onClick={() => handleCardImageClick(3)}
         >
           {cardImage4 ? (
@@ -291,7 +291,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
         ) : (
           <p 
             onClick={handleText1Click}
-            className={`absolute font-['Source_Han_Sans_CN_VF:Regular',sans-serif] font-normal h-[7.43%] leading-[normal] left-[92.42%] text-[clamp(12px,4vw,16px)] text-right top-[12.29%] translate-x-[-100%] w-[40%] cursor-pointer hover:opacity-70 transition-opacity ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}
+            className={`absolute font-['Source_Han_Sans_CN_VF:Regular',sans-serif] font-normal h-[7.43%] leading-[normal] left-[92.42%] text-[clamp(12px,4vw,16px)] text-right top-[12.29%] translate-x-[-100%] w-[40%] cursor-pointer hover:opacity-70 active:opacity-70 transition-opacity ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}
           >
             {customText1}
           </p>
@@ -310,7 +310,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
         ) : (
           <p 
             onClick={handleText2Click}
-            className={`absolute h-[7.43%] leading-[normal] left-[92.42%] text-[clamp(12px,4vw,16px)] text-right top-[22.57%] translate-x-[-100%] w-[80%] cursor-pointer hover:opacity-70 transition-opacity ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}
+            className={`absolute h-[7.43%] leading-[normal] left-[92.42%] text-[clamp(12px,4vw,16px)] text-right top-[22.57%] translate-x-[-100%] w-[80%] cursor-pointer hover:opacity-70 active:opacity-70 transition-opacity ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}
           >
             {customText2}
           </p>

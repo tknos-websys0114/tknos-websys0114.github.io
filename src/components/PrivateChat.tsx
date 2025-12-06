@@ -582,12 +582,32 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
           }
         }
 
+        // 更新备注名逻辑
         if (detailSettings) {
           globalCache.chatSettingsDetail[characterId] = detailSettings;
-          const newDisplayName = detailSettings.remark || '';
-          if (newDisplayName && newDisplayName !== displayName) {
-            updates.displayName = newDisplayName;
-          }
+        }
+
+        let realCharacterName = characterName;
+        if (characters) {
+           const found = characters.find((c: any) => c.id === characterId);
+           if (found) realCharacterName = found.name;
+        }
+
+        let finalDisplayName = detailSettings?.remark;
+        
+        // 如果没有备注
+        if (!finalDisplayName) {
+            // 且有真实角色名（不是'未知角色'），则使用真实角色名
+            if (realCharacterName && realCharacterName !== '未知角色') {
+                finalDisplayName = realCharacterName;
+            } else {
+                // 否则保持原样 (可能是 '未知角色')
+                finalDisplayName = displayName;
+            }
+        }
+        
+        if (finalDisplayName && finalDisplayName !== displayName) {
+           updates.displayName = finalDisplayName;
         }
 
         if (characters) {
@@ -1044,7 +1064,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
       
       const chatItem: any = {
         id: characterId,
-        name: characterName,
+        name: character?.name || characterName,
         lastMessage: lastMessage,
         lastSender: lastSender,
         time: timeString,

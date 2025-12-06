@@ -177,7 +177,7 @@ export default function WorldBookList({ onBack, onEdit }: WorldBookListProps) {
                      {/* Book Spine / Cover Design */}
                      {viewMode === 'grid' ? (
                         // GRID VIEW: Vertical Book Cover
-                        <div className="absolute inset-0 bg-white border border-[#E5E5E5] rounded-r-md rounded-l-sm shadow-[4px_4px_10px_rgba(0,0,0,0.05)] active:shadow-[6px_6px_15px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_15px_rgba(0,0,0,0.1)] transition-all overflow-hidden flex flex-col">
+                        <div className="absolute inset-0 bg-white border border-[#E5E5E5] rounded-r-md rounded-l-sm shadow-[4px_4px_10px_rgba(0,0,0,0.05)] transition-all overflow-hidden flex flex-col group-active:shadow-[6px_6px_15px_rgba(0,0,0,0.1)] group-hover:shadow-[6px_6px_15px_rgba(0,0,0,0.1)]">
                            {/* Spine decoration */}
                            <div className={`absolute left-0 top-0 bottom-0 w-3 ${book.scope === 'global' ? 'bg-[#2C2C2C]' : 'bg-[#8C8C89]'} opacity-10 border-r border-black/5`} />
                            
@@ -212,7 +212,7 @@ export default function WorldBookList({ onBack, onEdit }: WorldBookListProps) {
                         </div>
                      ) : (
                         // LIST VIEW: Horizontal Book Spine/Card
-                        <div className="w-full h-full bg-white border border-[#E5E5E5] rounded-md shadow-sm active:shadow-md hover:shadow-md transition-all flex overflow-hidden">
+                        <div className="w-full h-full bg-white border border-[#E5E5E5] rounded-md shadow-sm transition-all flex overflow-hidden group-active:shadow-md group-hover:shadow-md">
                            <div className={`w-2 h-full ${book.scope === 'global' ? 'bg-[#2C2C2C]' : 'bg-[#D6D3CC]'}`} />
                            <div className="flex-1 p-3 flex flex-col justify-center">
                               <div className="flex justify-between items-start mb-1">

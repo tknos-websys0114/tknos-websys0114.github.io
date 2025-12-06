@@ -169,7 +169,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
       <div className="h-16 bg-white flex items-center justify-between px-4">
         <button
           onClick={onClose}
-          className="p-2 -ml-2 active:opacity-60 transition-opacity"
+          className="p-2 -ml-2 active:opacity-60 hover:opacity-60 transition-opacity"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6"/>
@@ -194,7 +194,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
             type="text"
             value={remark}
             onChange={(e) => handleRemarkChange(e.target.value)}
-            placeholder={characterName}
+            placeholder={characterName === '未知角色' ? '' : characterName}
             className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] placeholder:text-[#999] outline-none focus:bg-[#ebebeb] transition-colors"
           />
         </div>
@@ -203,7 +203,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
         <div className="mb-8">
           <button
             onClick={handleTogglePin}
-            className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg active:bg-[#ebebeb] transition-colors flex items-center justify-between"
+            className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg active:bg-[#ebebeb] hover:bg-[#ebebeb] transition-colors flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
               <Pin className="w-5 h-5 text-[#666]" strokeWidth={2} />
@@ -234,7 +234,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
             </div>
             <button
               onClick={handleToggleStickers}
-              className={`w-12 h-7 rounded-full transition-colors flex items-center px-0.5 ${
+              className={`w-12 h-7 rounded-full transition-colors flex items-center px-0.5 active:opacity-80 hover:opacity-80 ${
                 enableStickers ? 'bg-[#7B9E7B]' : 'bg-[#d0d0d0]'
               }`}
             >
@@ -292,7 +292,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
         <div className="mb-8">
           <button
             onClick={() => setShowClearConfirm(true)}
-            className="w-full px-4 py-3 bg-[#ffe5e5] rounded-lg active:bg-[#ffd0d0] transition-colors flex items-center gap-3"
+            className="w-full px-4 py-3 bg-[#ffe5e5] rounded-lg active:bg-[#ffd0d0] hover:bg-[#ffd0d0] transition-colors flex items-center gap-3"
           >
             <Trash2 className="w-5 h-5 text-[#ff3b30]" strokeWidth={2} />
             <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#ff3b30]">
@@ -305,7 +305,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
         <div className="mb-8">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="w-full px-4 py-3 bg-[#ffe5e5] rounded-lg active:bg-[#ffd0d0] transition-colors flex items-center gap-3"
+            className="w-full px-4 py-3 bg-[#ffe5e5] rounded-lg active:bg-[#ffd0d0] hover:bg-[#ffd0d0] transition-colors flex items-center gap-3"
           >
             <X className="w-5 h-5 text-[#ff3b30]" strokeWidth={2} />
             <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#ff3b30]">

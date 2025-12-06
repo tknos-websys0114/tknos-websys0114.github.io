@@ -272,7 +272,7 @@ export default function BeautifySettings({ onBack }: BeautifySettingsProps) {
                   <div className="flex items-center gap-3">
                     <div 
                       onClick={() => handleIconClick(icon.id)}
-                      className="w-10 h-10 bg-slate-50 border border-slate-200 cursor-pointer overflow-hidden relative"
+                      className="w-10 h-10 bg-slate-50 border border-slate-200 cursor-pointer overflow-hidden relative active:border-slate-400 hover:border-slate-400 transition-colors"
                     >
                       {iconImages[icon.id] ? (
                         <img 

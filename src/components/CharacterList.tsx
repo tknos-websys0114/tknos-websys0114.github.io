@@ -146,7 +146,7 @@ export default function CharacterList({ onClose, onEditUser, onEditCharacter }: 
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-12 h-4 bg-[#D6D3CC] rounded-sm z-0" />
           
           <div 
-             className="relative bg-[#F9F9F7] border border-[#D6D3CC] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] z-10 transition-all active:border-[#B93636] active:shadow-md hover:border-[#B93636] hover:shadow-md"
+             className="relative bg-[#F9F9F7] border border-[#D6D3CC] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] z-10 transition-all group-active:border-[#B93636] group-active:shadow-md group-hover:border-[#B93636] group-hover:shadow-md"
           >
             {/* Corner Decorations */}
             <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-[#B93636] opacity-0 group-active:opacity-100 group-hover:opacity-100 transition-opacity" />
@@ -242,16 +242,16 @@ export default function CharacterList({ onClose, onEditUser, onEditCharacter }: 
                  <div
                     key={char.id}
                     onClick={() => onEditCharacter(char)}
-                    className="group relative bg-[#F9F9F7] border-l-[3px] border-l-[#D6D3CC] border-y border-r border-[#E5E5E5] p-3 pl-4 active:bg-[#EAE8E3] active:border-l-[#2C2C2C] transition-colors hover:border-l-[#2C2C2C] cursor-pointer"
+                    className="group relative bg-[#F9F9F7] border-l-[3px] border-l-[#D6D3CC] border-y border-r border-[#E5E5E5] p-3 pl-4 transition-colors cursor-pointer active:bg-[#EAE8E3] active:border-l-[#2C2C2C] hover:bg-[#EAE8E3] hover:border-l-[#2C2C2C]"
                  >
                     <div className="flex items-center gap-4">
                        {/* ID Number */}
-                       <span className="text-[10px] font-mono text-[#8C8C89] w-6 text-right group-active:text-[#B93636] group-hover:text-[#B93636] transition-colors">
+                       <span className="text-[10px] font-mono text-[#8C8C89] w-6 text-right transition-colors group-active:text-[#B93636] group-hover:text-[#B93636]">
                           {(index + 1).toString().padStart(3, '0')}
                        </span>
 
                        {/* Avatar Thumb */}
-                       <div className="w-10 h-10 bg-[#E5E5E5] border border-[#D6D3CC] flex-shrink-0 overflow-hidden grayscale group-active:grayscale-0 group-hover:grayscale-0 transition-all">
+                       <div className="w-10 h-10 bg-[#E5E5E5] border border-[#D6D3CC] flex-shrink-0 overflow-hidden grayscale transition-all group-active:grayscale-0 group-hover:grayscale-0">
                           {char.avatarUrl ? (
                              <img src={char.avatarUrl} alt="" className="w-full h-full object-cover" />
                           ) : (
@@ -268,7 +268,7 @@ export default function CharacterList({ onClose, onEditUser, onEditCharacter }: 
                                 {char.name}
                              </h4>
                              {/* Optional Decorative Status Tag */}
-                             <span className="text-[9px] font-bold uppercase text-[#B93636] opacity-0 group-active:opacity-100 group-hover:opacity-100 transition-opacity border border-[#B93636] px-1">
+                             <span className="text-[9px] font-bold uppercase text-[#B93636] opacity-0 transition-opacity border border-[#B93636] px-1 group-active:opacity-100 group-hover:opacity-100">
                                 显现中
                              </span>
                           </div>
@@ -280,7 +280,7 @@ export default function CharacterList({ onClose, onEditUser, onEditCharacter }: 
                           </div>
                        </div>
 
-                       <ChevronRight className="w-4 h-4 text-[#D6D3CC] group-active:text-[#2C2C2C] group-hover:text-[#2C2C2C] transition-colors" />
+                       <ChevronRight className="w-4 h-4 text-[#D6D3CC] transition-colors group-active:text-[#2C2C2C] group-hover:text-[#2C2C2C]" />
                     </div>
                  </div>
               ))
