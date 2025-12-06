@@ -1,6 +1,35 @@
 @import url("https://fontsapi.zeoseven.com/482/main/result.css");
 @import url("https://fontsapi.zeoseven.com/639/main/result.css");
 
+/* Custom font classes */
+.bakbak-one-regular {
+  font-family: "Bakbak One", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.actor-regular {
+  font-family: 'Actor-Regular', cursive;
+}
+
+.bona-nova-regular {
+  font-family: "Bona Nova", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.bona-nova-bold {
+  font-family: "Bona Nova", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.bona-nova-regular-italic {
+  font-family: "Bona Nova", serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

@@ -1,3 +1,4 @@
+import { toast } from "sonner@2.0.3";
 import { useState, useRef, useEffect } from "react";
 import Desktop1 from "./Desktop1";
 import Desktop2 from "./Desktop2";
@@ -34,6 +35,18 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
   const currentX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 用于在事件监听器中访问最新状态
+  const showChatRef = useRef(showChat);
+  const pendingChatIdRef = useRef(pendingChatId);
+
+  useEffect(() => {
+    showChatRef.current = showChat;
+  }, [showChat]);
+
+  useEffect(() => {
+    pendingChatIdRef.current = pendingChatId;
+  }, [pendingChatId]);
+
   useEffect(() => {
     if (initialChatId) {
       setShowChat(true);
@@ -44,10 +57,56 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
   // 监听 Service Worker 消息
   useEffect(() => {
     const handleSWMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'open-conversation') {
+      if (!event.data) return;
+
+      if (event.data.type === 'open-conversation') {
         const { conversationId } = event.data;
         setShowChat(true);
         setPendingChatId(conversationId);
+      }
+
+      // 处理 AI 回复完成的消息
+      if (event.data.type === 'AI_TASK_COMPLETED') {
+        const { messages, characterId } = event.data.payload;
+        if (!messages || messages.length === 0) return;
+        
+        const lastMsg = messages[messages.length - 1];
+        const senderName = lastMsg.senderName || '新消息';
+        
+        // 如果聊天界面未打开，或者打开的不是当前角色的聊天
+        const isChatOpen = showChatRef.current;
+        const currentChatId = pendingChatIdRef.current;
+        
+        // 只有当不在当前聊天界面时才弹窗
+        if (!isChatOpen || currentChatId !== characterId) {
+          toast(senderName, {
+            description: lastMsg.text,
+            action: {
+              label: '查看',
+              onClick: () => {
+                setShowChat(true);
+                setPendingChatId(characterId);
+              }
+            },
+            duration: 5000,
+          });
+        }
+      }
+
+      if (event.data.type === 'AI_TASK_FAILED') {
+        const { characterId, error } = event.data.payload;
+        
+        // 如果聊天界面未打开，或者打开的不是当前角色的聊天
+        const isChatOpen = showChatRef.current;
+        const currentChatId = pendingChatIdRef.current;
+        
+        // 只有当不在当前聊天界面时才弹窗（在当前界面会有 PrivateChat 处理）
+        if (!isChatOpen || currentChatId !== characterId) {
+          toast.error('消息发送失败', {
+            description: error,
+            duration: 5000,
+          });
+        }
       }
     };
 
@@ -131,6 +190,10 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
 
   const handleCloseChat = () => {
     setShowChat(false);
+  };
+
+  const handleChatChange = (chatId: string | null) => {
+    setPendingChatId(chatId);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -293,7 +356,11 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
       
       {/* 聊天界面 */}
       {showChat && (
-        <ChatContainer onClose={handleCloseChat} initialChatId={pendingChatId} />
+        <ChatContainer 
+          onClose={handleCloseChat} 
+          initialChatId={pendingChatId} 
+          onChatChange={handleChatChange}
+        />
       )}
     </div>
   );

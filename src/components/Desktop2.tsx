@@ -179,7 +179,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
             <div className="absolute inset-0 w-full h-full rounded-[24px]" style={{ backgroundColor: '#D5EAE3' }} />
           )}
         </div>
-        <p className={`absolute font-['Braah_One:Regular',sans-serif] leading-[normal] left-1/2 top-1/2 text-[clamp(70px,12vh,120px)] text-center translate-x-[-50%] translate-y-[-50%] w-[87%] pointer-events-none ${colorMode === 'dark' ? 'text-[rgba(0,0,0,0.5)]' : 'text-[rgba(255,255,255,0.5)]'}`}>
+        <p className={`absolute bakbak-one-regular leading-[normal] left-1/2 top-1/2 text-[clamp(70px,12vh,120px)] text-center translate-x-[-50%] translate-y-[-50%] w-[87%] pointer-events-none ${colorMode === 'dark' ? 'text-[rgba(0,0,0,0.5)]' : 'text-[rgba(255,255,255,0.5)]'}`}>
           {formatTime(currentTime)}
         </p>
         <input
@@ -267,7 +267,7 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
         </div>
 
         {/* 日期显示 */}
-        <p className={`absolute font-['Bona_Nova:Regular',sans-serif] h-[22.29%] leading-[normal] left-[5.34%] not-italic top-0 w-[46.63%] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>
+        <p className={`absolute bona-nova-regular h-[22.29%] leading-[normal] left-[5.34%] not-italic top-0 w-[46.63%] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>
           <span className="text-[clamp(48px,15vw,64px)]">{formatDate().month}</span>
           <span className="text-[clamp(36px,11.25vw,48px)]">/</span>
           <span className="text-[clamp(48px,15vw,64px)]">{formatDate().day}</span>

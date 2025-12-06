@@ -97,7 +97,7 @@ function AnniversaryWidget({ userData, colorMode, preloadedImages }: { userData:
         <p>&nbsp;</p>
       </div>
       <p className={`absolute font-['Source_Han_Sans_CN_VF:Normal',sans-serif] font-[350] h-[14.375%] leading-[normal] left-1/2 text-[clamp(11px,3.25vw,13px)] text-center top-[28.125%] translate-x-[-50%] w-[31.25%] pointer-events-none ${colorMode === 'dark' ? 'text-black' : 'text-white'}`}>已过去</p>
-      <p className={`absolute font-['Arial:Regular',sans-serif] h-[33.75%] leading-[normal] left-1/2 not-italic text-[0px] text-center top-[calc(50%-16.875%)] translate-x-[-50%] w-[72.5%] pointer-events-none ${colorMode === 'dark' ? 'text-black' : 'text-white'}`}>
+      <p className={`absolute font-['Actor:Regular',sans-serif] h-[33.75%] leading-[normal] left-1/2 not-italic text-[0px] text-center top-[calc(50%-16.875%)] translate-x-[-50%] w-[72.5%] pointer-events-none ${colorMode === 'dark' ? 'text-black' : 'text-white'}`}>
         <span className="font-['Actor:Regular',sans-serif] text-[clamp(36px,12vw,48px)]">{daysPassed}</span>
         <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] font-normal text-[clamp(11px,3.25vw,13px)]">天</span>
       </p>
@@ -325,7 +325,7 @@ function ProfileWidget({ userData, onUserDataChange, colorMode, preloadedImages 
             </div>
             {/* Rectangle 23 - 时间显示容器，与Rectangle 22高度一致，宽度固定 */}
             <div className={`rounded-[24px] px-[3%] py-[2.5%] w-[38%] h-[46px] flex items-center justify-center ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.5)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
-              <p className={`font-['Bakbak_One:Regular',sans-serif] text-[clamp(20px,6.5vw,26px)] text-center whitespace-nowrap overflow-hidden ${colorMode === 'dark' ? 'text-white/50' : 'text-[#afafaf]'}`}>
+              <p className={`bakbak-one-regular text-[clamp(20px,6.5vw,26px)] text-center whitespace-nowrap overflow-hidden ${colorMode === 'dark' ? 'text-white/50' : 'text-[#afafaf]'}`}>
                 {formatTime(currentTime)}
               </p>
             </div>

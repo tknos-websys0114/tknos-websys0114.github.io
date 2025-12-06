@@ -6,9 +6,10 @@ import { getDisplayName } from "../utils/chatCache";
 interface ChatContainerProps {
   onClose: () => void;
   initialChatId?: string | null;
+  onChatChange?: (chatId: string | null) => void;
 }
 
-export default function ChatContainer({ onClose, initialChatId }: ChatContainerProps) {
+export default function ChatContainer({ onClose, initialChatId, onChatChange }: ChatContainerProps) {
   const [currentView, setCurrentView] = useState<'list' | 'chat'>(initialChatId ? 'chat' : 'list');
   const [currentChatId, setCurrentChatId] = useState<string | null>(initialChatId || null);
   const [currentChatName, setCurrentChatName] = useState<string>('');
@@ -28,6 +29,7 @@ export default function ChatContainer({ onClose, initialChatId }: ChatContainerP
     setCurrentChatId(characterId);
     setCurrentChatName(characterName);
     setCurrentView('chat');
+    onChatChange?.(characterId);
   };
 
   const handleCloseChat = () => {
@@ -36,6 +38,7 @@ export default function ChatContainer({ onClose, initialChatId }: ChatContainerP
     setCurrentChatName('');
     // 刷新聊天列表
     setRefreshKey(prev => prev + 1);
+    onChatChange?.(null);
   };
 
   return (
