@@ -15,6 +15,8 @@ interface UserData {
   date: string;
 }
 
+import { Toaster } from "sonner@2.0.3";
+
 export default function App() {
   const [currentView, setCurrentView] = useState<'loading' | 'login' | 'desktop'>('loading');
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -182,7 +184,12 @@ export default function App() {
   };
 
   if (showLoading && currentView === 'loading') {
-    return <LoadingScreen />;
+    return (
+      <>
+        <LoadingScreen />
+        <Toaster />
+      </>
+    );
   }
 
   if (currentView === 'login') {
@@ -191,6 +198,7 @@ export default function App() {
         <PWAIconGenerator />
         <LoginPage onLoginSuccess={handleLoginSuccess} />
         <PWAInstaller />
+        <Toaster />
       </>
     );
   }
@@ -201,6 +209,7 @@ export default function App() {
         <PWAIconGenerator />
         <SwipeableDesktop userData={userData} preloadedImages={preloadedImages} initialChatId={initialChatId} />
         <PWAInstaller />
+        <Toaster />
       </>
     );
   }

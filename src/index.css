@@ -2984,24 +2984,8 @@
     font-family: Arial, Noto Sans Symbols2\:Regular, sans-serif;
   }
 
-  .font-\[\'Arial\:Regular\'\,sans-serif\] {
-    font-family: Arial\:Regular, sans-serif;
-  }
-
-  .font-\[\'Bakbak_One\:Regular\'\,sans-serif\] {
-    font-family: Bakbak One\:Regular, sans-serif;
-  }
-
   .font-\[\'Bona_Nova\:Bold\'\,\'Noto_Sans_JP\:Bold\'\,sans-serif\] {
     font-family: Bona Nova\:Bold, Noto Sans JP\:Bold, sans-serif;
-  }
-
-  .font-\[\'Bona_Nova\:Regular\'\,sans-serif\] {
-    font-family: Bona Nova\:Regular, sans-serif;
-  }
-
-  .font-\[\'Braah_One\:Regular\'\,sans-serif\] {
-    font-family: Braah One\:Regular, sans-serif;
   }
 
   .font-\[\'Didact_Gothic\:Regular\'\,\'Noto_Sans_Symbols2\:Regular\'\,sans-serif\] {
@@ -4790,6 +4774,34 @@
 }
 
 
+
+.bakbak-one-regular {
+  font-family: Bakbak One, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.actor-regular {
+  font-family: Actor-Regular, cursive;
+}
+
+.bona-nova-regular {
+  font-family: Bona Nova, serif;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.bona-nova-bold {
+  font-family: Bona Nova, serif;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.bona-nova-regular-italic {
+  font-family: Bona Nova, serif;
+  font-style: italic;
+  font-weight: 400;
+}
 
 :root {
   --font-size: 16px;
