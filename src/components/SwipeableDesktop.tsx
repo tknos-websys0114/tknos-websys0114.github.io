@@ -67,18 +67,18 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
 
       // 处理 AI 回复完成的消息
       if (event.data.type === 'AI_TASK_COMPLETED') {
-        const { messages, characterId } = event.data.payload;
+        const { messages, characterId, displayName } = event.data.payload;
         if (!messages || messages.length === 0) return;
         
         const lastMsg = messages[messages.length - 1];
-        const senderName = lastMsg.senderName || '新消息';
+        const senderName = displayName || lastMsg.senderName || '新消息';
         
         // 如果聊天界面未打开，或者打开的不是当前角色的聊天
         const isChatOpen = showChatRef.current;
         const currentChatId = pendingChatIdRef.current;
         
-        // 只有当不在当前聊天界面时才弹窗
-        if (!isChatOpen || currentChatId !== characterId) {
+        // 只有当聊天应用完全关闭时才弹窗（如果在聊天应用内，无论是列表还是对话页，都不弹系统通知）
+        if (!isChatOpen) {
           toast(senderName, {
             description: lastMsg.text,
             action: {

@@ -70,13 +70,33 @@ export default function App() {
 
     // 添加link标签
     links.forEach(linkData => {
-      let link = document.querySelector(`link[rel="${linkData.rel}"]`);
+      // 查找是否已存在相同的 href
+      let link = document.querySelector(`link[href="${linkData.href}"]`);
       if (!link) {
         link = document.createElement('link');
         link.setAttribute('rel', linkData.rel);
+        link.setAttribute('href', linkData.href);
         document.head.appendChild(link);
       }
-      link.setAttribute('href', linkData.href);
+    });
+
+    // 添加字体
+    const fontLinks = [
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: '' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Bakbak+One&family=Bona+Nova:ital,wght@0,400;0,700;1,400&family=Braah+One&display=swap' }
+    ];
+
+    fontLinks.forEach(linkData => {
+      if (!document.querySelector(`link[href="${linkData.href}"]`)) {
+        const link = document.createElement('link');
+        link.rel = linkData.rel;
+        link.href = linkData.href;
+        if (linkData.crossOrigin !== undefined) {
+          link.crossOrigin = linkData.crossOrigin;
+        }
+        document.head.appendChild(link);
+      }
     });
   }, []);
 
@@ -187,7 +207,7 @@ export default function App() {
     return (
       <>
         <LoadingScreen />
-        <Toaster />
+        <Toaster position="top-center" />
       </>
     );
   }
@@ -198,7 +218,7 @@ export default function App() {
         <PWAIconGenerator />
         <LoginPage onLoginSuccess={handleLoginSuccess} />
         <PWAInstaller />
-        <Toaster />
+        <Toaster position="top-center" />
       </>
     );
   }
@@ -209,7 +229,7 @@ export default function App() {
         <PWAIconGenerator />
         <SwipeableDesktop userData={userData} preloadedImages={preloadedImages} initialChatId={initialChatId} />
         <PWAInstaller />
-        <Toaster />
+        <Toaster position="top-center" />
       </>
     );
   }

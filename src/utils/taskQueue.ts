@@ -116,6 +116,7 @@ export async function createAITask(
         taskId,
         characterId: chatId,
         characterName: payload.characterName,
+        displayName: payload.displayName, // 传递备注名
         apiConfig,
         messages,
         // 传递图片识别相关数据
