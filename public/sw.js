@@ -271,7 +271,7 @@ self.addEventListener('message', async (event) => {
       });
       
       // 保存消息到 IndexedDB 并更新未读计数
-      await saveMessageToDB(payload.characterId, newMessages);
+      await saveMessageToDB(payload.characterId, newMessages, payload.displayName);
       
       // 检查此时是否有前台窗口
       const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
@@ -370,7 +370,7 @@ function openDB() {
   });
 }
 
-async function saveMessageToDB(characterId, newMessages) {
+async function saveMessageToDB(characterId, newMessages, senderDisplayName) {
   try {
     const db = await openDB();
     
@@ -401,11 +401,17 @@ async function saveMessageToDB(characterId, newMessages) {
             
             // Increment unread count
             const currentUnread = chat.unread || 0;
+
+            // Determine sender name for display (prefer nickname/remark)
+            let displaySender = lastMsg.senderName;
+            if (lastMsg.senderId === 'character' && senderDisplayName) {
+              displaySender = senderDisplayName;
+            }
             
             chatList[chatIndex] = {
               ...chat,
               lastMessage: lastMsg.text,
-              lastSender: lastMsg.senderName,
+              lastSender: displaySender,
               timestamp: new Date(lastMsg.timestamp).getTime(),
               time: new Date(lastMsg.timestamp).toLocaleTimeString(),
               unread: currentUnread + newMessages.length
