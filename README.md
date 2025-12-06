@@ -1,7 +1,7 @@
 
   # Touken OS
 
-  This is a code bundle for Touken OS. The original project is available at https://www.figma.com/design/YbOmpyX1pqSdcMToJ46R7K/Touken-OS.
+  This is a code bundle for Touken OS. The original project is available at https://www.figma.com/design/9ClHfZ6BTHt4OPty4tifGD/Touken-OS.
 
   ## Running the code
 
