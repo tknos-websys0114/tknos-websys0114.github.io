@@ -87,6 +87,8 @@ export default function APISettings({ onBack }: APISettingsProps) {
     
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    setTestResult(null); // Clear test result when saving
+    setFetchResult(null); // Clear fetch result when saving
   };
 
   const handleConfigSelect = async (index: number) => {
@@ -181,13 +183,16 @@ export default function APISettings({ onBack }: APISettingsProps) {
 
       if (response.ok) {
         setTestResult({ success: true, message: '连接正常' });
+        setTimeout(() => setTestResult(null), 2000);
       } else {
         const errorData = await response.json().catch(() => ({}));
         const msg = errorData.error?.message || errorData.message || `HTTP ${response.status}`;
         setTestResult({ success: false, message: `错误: ${msg}` });
+        setTimeout(() => setTestResult(null), 3000);
       }
     } catch (error) {
       setTestResult({ success: false, message: '连接失败' });
+      setTimeout(() => setTestResult(null), 3000);
     } finally {
       setTesting(false);
     }

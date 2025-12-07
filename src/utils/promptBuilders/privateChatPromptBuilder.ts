@@ -177,6 +177,7 @@ async function getUserData() {
     fortress: userData.fortress || '未设置',
     date: userData.date || '未设置',
     birthday: userData.birthday || '',
+    attendant: userData.attendant || '',
     description: userDescription,
   };
 }
@@ -544,7 +545,7 @@ async function buildChatHistory(
     else if (msg.stickerId && stickerMeanings[msg.stickerId]) {
       content = `[表情包: ${stickerMeanings[msg.stickerId]}]`;
     }
-    // 图片消息：只显示占位符
+    // 图片消��：只显示占位符
     else if (msg.imageKey) {
       content = '[发送了一张图片]';
     }
@@ -653,7 +654,7 @@ ${timeInfoText ? `- ${timeInfoText}` : ''}
   - **审神者名:** ${userData.name}
   - **属国:** ${userData.country}
   - **本丸名:** ${userData.fortress}
-  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}
+  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}
 
 **你的任务与输出格式 (请严格遵守):**
 - **任务:**  

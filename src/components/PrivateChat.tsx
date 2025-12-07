@@ -595,14 +595,19 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
 
         let finalDisplayName = detailSettings?.remark;
         
-        // 如果没有备注
-        if (!finalDisplayName) {
+        // 如果没有备注（或是空字符串/纯空格）
+        if (!finalDisplayName || !finalDisplayName.trim()) {
             // 且有真实角色名（不是'未知角色'），则使用真实角色名
             if (realCharacterName && realCharacterName !== '未知角色') {
                 finalDisplayName = realCharacterName;
             } else {
-                // 否则保持原样 (可能是 '未知角色')
-                finalDisplayName = displayName;
+                // 否则使用初始传入的 characterName，如果它也不是'未知角色'
+                if (characterName && characterName !== '未知角色') {
+                    finalDisplayName = characterName;
+                } else {
+                     // 最后的回退，保持原样（可能是 '未知角色'，但至少不是空白）
+                     finalDisplayName = displayName || '未知角色';
+                }
             }
         }
         
@@ -1062,9 +1067,22 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
         lastMessage = lastMsg.text;
       }
       
+      // 确定聊天列表显示的名称
+      // 优先级: 角色真实名称 > 传入的角色名称 > '未知角色'
+      let chatListName = characterName;
+      if (character?.name && character.name !== '未知角色') {
+        chatListName = character.name;
+      } else if (!chatListName || chatListName === '未知角色') {
+        // 尝试从全局缓存找
+        const cachedChar = globalCache.characters?.find((c: any) => c.id === characterId);
+        if (cachedChar?.name && cachedChar.name !== '未知角色') {
+          chatListName = cachedChar.name;
+        }
+      }
+
       const chatItem: any = {
         id: characterId,
-        name: character?.name || characterName,
+        name: chatListName || '未知角色',
         lastMessage: lastMessage,
         lastSender: lastSender,
         time: timeString,

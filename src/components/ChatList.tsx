@@ -393,7 +393,22 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
                         
                         <div className="flex items-center justify-between">
                           <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999] truncate flex-1 pr-2">
-                            {chat.lastSender ? `${chat.lastSender}：${chat.lastMessage}` : chat.lastMessage}
+                            {(() => {
+                              // 处理消息预览中的发送者名字
+                              let senderName = chat.lastSender;
+                              
+                              // 如果发送者名字是'未知角色'，或者是空，且最后一条消息不是用户发的（简单判断：如果chat.lastSender等于chat.name或者chat.remark）
+                              // 这里我们主要修正'未知角色'的情况
+                              if (senderName === '未知角色') {
+                                // 尝试找到真实名字
+                                const realName = characters.find(c => c.id === chat.id)?.name;
+                                if (realName && realName !== '未知角色') {
+                                  senderName = chat.remark || realName;
+                                }
+                              }
+                              
+                              return senderName ? `${senderName}：${chat.lastMessage}` : chat.lastMessage;
+                            })()}
                           </p>
                           {chat.unread !== undefined && chat.unread > 0 && (
                             <span className="min-w-[18px] h-[18px] bg-[#ff4d4f] text-white text-[11px] font-medium flex items-center justify-center rounded-full px-1.5 flex-shrink-0">
