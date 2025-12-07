@@ -615,6 +615,27 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
            updates.displayName = finalDisplayName;
         }
 
+        // 自动修复：如果没有保存过备注，且我们找到了有效的名字（不是“未知角色”），自动保存它作为备注
+        // 这样可以修复下次进入时的显示，并确保ChatList等其他组件能读取到正确的名字
+        if ((!detailSettings || !detailSettings.remark) && finalDisplayName && finalDisplayName !== '未知角色') {
+             const newSettings = {
+                ...(detailSettings || {}),
+                remark: finalDisplayName,
+                isPinned: detailSettings?.isPinned || false,
+                background: detailSettings?.background
+            };
+            
+            // 异步保存到数据库
+            db.set(STORES.CHAT_SETTINGS, `chat_detail_settings_${characterId}`, newSettings).then(() => {
+                // 更新全局缓存
+                if (!globalCache.chatSettingsDetail) globalCache.chatSettingsDetail = {};
+                globalCache.chatSettingsDetail[characterId] = newSettings;
+                console.log('[PrivateChat] Auto-fixed missing remark with:', finalDisplayName);
+            }).catch(err => {
+                console.warn('[PrivateChat] Failed to auto-save remark:', err);
+            });
+        }
+
         if (characters) {
           const foundCharacter = characters.find((c: any) => c.id === characterId);
           if (foundCharacter) {
