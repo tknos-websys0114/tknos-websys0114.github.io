@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import imgLogo from "figma:asset/5f8732ee23725e4e0895553baa1c8e03e361ca7a.png";
 
-export default function LoadingScreen() {
+export default function LoadingScreen({ onAnimationComplete }: { onAnimationComplete?: () => void }) {
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   
@@ -25,7 +25,13 @@ export default function LoadingScreen() {
       if (newProgress > 70 && logs.length === 3) setLogs(prev => [...prev, ">> 加载刀剑男士显现记录..."]);
       if (newProgress > 90 && logs.length === 4) setLogs(prev => [...prev, ">> Touken OS 系统就绪"]);
 
-      if (currentStep >= steps) clearInterval(timer);
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        if (onAnimationComplete) {
+            // 稍微延迟一点点，让用户看到100%的状态
+            setTimeout(onAnimationComplete, 200);
+        }
+      }
     }, interval);
 
     return () => clearInterval(timer);

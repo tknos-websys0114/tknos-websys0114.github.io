@@ -23,6 +23,10 @@ export default function App() {
   const [showLoading, setShowLoading] = useState(true);
   const [preloadedImages, setPreloadedImages] = useState<Record<string, string | null>>({});
   const [initialChatId, setInitialChatId] = useState<string | null>(null);
+  
+  // 新增状态控制加载流程
+  const [isAnimationComplete, setIsAnimationComplete] = useState(false);
+  const [initData, setInitData] = useState<{userData: UserData | null, images: any} | null>(null);
 
   // 初始化 PWA
   usePWA();
@@ -134,9 +138,6 @@ export default function App() {
         // 从IndexedDB检查是否有保存的用户数据
         const checkDataPromise = db.get<UserData>(STORES.USER_DATA, 'userData');
         
-        // 强制等待至少 2.5 秒，让加载动画播完
-        const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2500));
-
         // 预加载关键图片资源
         const preloadPromise = (async () => {
           const keysToPreload = [
@@ -175,28 +176,39 @@ export default function App() {
           return loaded;
         })();
 
-        const [savedData, images] = await Promise.all([checkDataPromise, preloadPromise, minLoadingTime]);
-        setPreloadedImages(images);
+        const [savedData, images] = await Promise.all([checkDataPromise, preloadPromise]);
         
-        if (savedData) {
-          console.log('User data found, redirecting to desktop');
-          setUserData(savedData);
-          setShowLoading(false);
-          setCurrentView('desktop');
-        } else {
-          console.log('No user data found, showing login page');
-          setShowLoading(false);
-          setCurrentView('login');
-        }
+        // 数据加载完成，存入临时状态
+        setInitData({ userData: savedData || null, images });
       } catch (error) {
         console.error('Failed to initialize app:', error);
-        setShowLoading(false);
-        setCurrentView('login');
+        // 出错时也认为数据加载完成（为空）
+        setInitData({ userData: null, images: {} });
       }
     };
 
     initApp();
   }, []);
+
+  // 当动画完成且数据就绪时，执行跳转
+  useEffect(() => {
+    if (isAnimationComplete && initData) {
+      console.log('Animation complete and data ready, transitioning...');
+      setPreloadedImages(initData.images);
+      
+      if (initData.userData) {
+        console.log('User data found, redirecting to desktop');
+        setUserData(initData.userData);
+        setCurrentView('desktop');
+      } else {
+        console.log('No user data found, showing login page');
+        setCurrentView('login');
+      }
+      
+      // 稍微延迟关闭Loading，确保视图切换平滑
+      setTimeout(() => setShowLoading(false), 100);
+    }
+  }, [isAnimationComplete, initData]);
 
   const handleLoginSuccess = (data: UserData) => {
     setUserData(data);
@@ -206,7 +218,7 @@ export default function App() {
   if (showLoading && currentView === 'loading') {
     return (
       <>
-        <LoadingScreen />
+        <LoadingScreen onAnimationComplete={() => setIsAnimationComplete(true)} />
         <Toaster position="top-center" />
       </>
     );
