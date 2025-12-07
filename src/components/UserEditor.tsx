@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, User, Flag, Castle, Calendar, Gift, FileText, Star, Save, X, FileSignature } from "lucide-react";
+import { ChevronLeft, Check, User, Flag, Castle, Calendar, Gift, FileText, Star, Save, X, FileSignature, Sword } from "lucide-react";
 import { useState, useEffect } from "react";
 import { db, STORES } from "../utils/db";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,6 +12,7 @@ export default function UserEditor({ onBack }: UserEditorProps) {
   const [country, setCountry] = useState('');
   const [fortress, setFortress] = useState('');
   const [attendant, setAttendant] = useState('');
+  const [initialSword, setInitialSword] = useState('');
   const [date, setDate] = useState('');
   const [birthday, setBirthday] = useState('');
   const [description, setDescription] = useState('');
@@ -26,6 +27,7 @@ export default function UserEditor({ onBack }: UserEditorProps) {
           setCountry(data.country || '');
           setFortress(data.fortress || '');
           setAttendant(data.attendant || '');
+          setInitialSword(data.initialSword || '');
           setDate(data.date || '');
           setBirthday(data.birthday || '');
         }
@@ -44,7 +46,7 @@ export default function UserEditor({ onBack }: UserEditorProps) {
 
   const handleSave = async () => {
     try {
-      const userData = { name, country, fortress, attendant, date, birthday };
+      const userData = { name, country, fortress, attendant, initialSword, date, birthday };
       await db.set(STORES.USER_DATA, 'userData', userData);
       await db.set(STORES.USER_DATA, 'user_description', description);
 
@@ -178,6 +180,19 @@ export default function UserEditor({ onBack }: UserEditorProps) {
                        placeholder="未指定"
                      />
                   </div>
+               </div>
+
+               <div>
+                  <label className="block text-[10px] font-mono text-[#8C8C89] uppercase tracking-wider mb-1 flex items-center gap-1">
+                     <Sword className="w-3 h-3" /> 初始刀
+                  </label>
+                  <input
+                    type="text"
+                    value={initialSword}
+                    onChange={(e) => setInitialSword(e.target.value)}
+                    className="w-full bg-[#EAE8E3] border-b-2 border-[#D6D3CC] px-3 py-2 text-sm font-medium text-[#4A4A4A] focus:outline-none focus:border-[#2C2C2C] focus:bg-white transition-colors"
+                    placeholder="请输入初始刀"
+                  />
                </div>
 
                <div className="grid grid-cols-2 gap-4">

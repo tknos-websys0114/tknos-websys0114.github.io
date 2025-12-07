@@ -178,6 +178,7 @@ async function getUserData() {
     date: userData.date || '未设置',
     birthday: userData.birthday || '',
     attendant: userData.attendant || '',
+    initialSword: userData.initialSword || '',
     description: userDescription,
   };
 }
@@ -654,7 +655,7 @@ ${timeInfoText ? `- ${timeInfoText}` : ''}
   - **审神者名:** ${userData.name}
   - **属国:** ${userData.country}
   - **本丸名:** ${userData.fortress}
-  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}
+  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.initialSword ? `\n  - **初始刀:** ${userData.initialSword}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}
 
 **你的任务与输出格式 (请严格遵守):**
 - **任务:**  
