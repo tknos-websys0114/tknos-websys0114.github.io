@@ -22,18 +22,18 @@ export default function DataManagement({ onBack }: DataManagementProps) {
   const [isClearing, setIsClearing] = useState(false);
   
   const [stats, setStats] = useState({
-    totalSize: '0.00',
-    userDataSize: '0.00',
-    chatMessagesSize: '0.00',
-    characterDataSize: '0.00',
-    chatSettingsSize: '0.00',
-    worldBooksSize: '0.00',
-    otherDataSize: '0.00',
-    chatImagesSize: '0.00',
-    otherImagesSize: '0.00',
+    totalSize: 0,
+    userDataSize: 0,
+    chatMessagesSize: 0,
+    characterDataSize: 0,
+    chatSettingsSize: 0,
+    worldBooksSize: 0,
+    otherDataSize: 0,
+    chatImagesSize: 0,
+    otherImagesSize: 0,
     imageStats: {
       totalImages: 0,
-      totalSize: '0.00',
+      totalSize: 0,
       categories: {} as Record<string, { count: number, size: string }>,
     },
   });
@@ -41,6 +41,15 @@ export default function DataManagement({ onBack }: DataManagementProps) {
   useEffect(() => {
     loadStats();
   }, []);
+
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  };
 
   const loadStats = async () => {
     try {
@@ -54,32 +63,33 @@ export default function DataManagement({ onBack }: DataManagementProps) {
       const miscSize = await db.getStoreSize(STORES.MISC);
       const chatsSize = await db.getStoreSize(STORES.CHATS);
 
-      const otherDataSize = apiSettingsSize + appearanceSize + miscSize + chatsSize;
+      const systemDataSize = apiSettingsSize + appearanceSize + miscSize + chatsSize + userDataSize + chatSettingsSize;
       
       const imageStats = await getImageCategoryStats();
       const totalImages = Object.values(imageStats).reduce((sum, { count }) => sum + count, 0);
-      const totalImageSize = Object.values(imageStats).reduce((sum, { size }) => sum + parseFloat(size), 0);
+      const totalImageSizeKB = Object.values(imageStats).reduce((sum, { size }) => sum + parseFloat(size), 0);
+      const totalImageSizeBytes = totalImageSizeKB * 1024;
 
-      const chatImagesSizeStr = imageStats[IMAGE_CATEGORIES.CHAT_IMAGES]?.size || '0.00';
-      const chatImagesSize = parseFloat(chatImagesSizeStr);
-      const otherImagesSize = totalImageSize - chatImagesSize;
+      const chatImagesSizeKB = parseFloat(imageStats[IMAGE_CATEGORIES.CHAT_IMAGES]?.size || '0.00');
+      const chatImagesSizeBytes = chatImagesSizeKB * 1024;
+      
+      const otherImagesSizeBytes = totalImageSizeBytes - chatImagesSizeBytes;
 
-      const totalSize = userDataSize + chatMessagesSize + characterDataSize + 
-                       chatSettingsSize + worldBooksSize + otherDataSize + (totalImageSize * 1024);
+      const totalSizeBytes = chatMessagesSize + characterDataSize + worldBooksSize + systemDataSize + totalImageSizeBytes;
 
       setStats({
-        totalSize: (totalSize / 1024).toFixed(2),
-        userDataSize: (userDataSize / 1024).toFixed(2),
-        chatMessagesSize: (chatMessagesSize / 1024).toFixed(2),
-        characterDataSize: (characterDataSize / 1024).toFixed(2),
-        chatSettingsSize: (chatSettingsSize / 1024).toFixed(2),
-        worldBooksSize: (worldBooksSize / 1024).toFixed(2),
-        otherDataSize: (otherDataSize / 1024).toFixed(2),
-        chatImagesSize: chatImagesSize.toFixed(2),
-        otherImagesSize: otherImagesSize.toFixed(2),
+        totalSize: totalSizeBytes,
+        userDataSize: userDataSize,
+        chatMessagesSize: chatMessagesSize,
+        characterDataSize: characterDataSize,
+        chatSettingsSize: chatSettingsSize,
+        worldBooksSize: worldBooksSize,
+        otherDataSize: systemDataSize,
+        chatImagesSize: chatImagesSizeBytes,
+        otherImagesSize: otherImagesSizeBytes,
         imageStats: {
           totalImages,
-          totalSize: totalImageSize.toFixed(2),
+          totalSize: totalImageSizeBytes,
           categories: imageStats,
         },
       });
@@ -291,8 +301,8 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                    </div>
                 </div>
                 <div className="text-right">
-                   <span className="text-xl font-black text-slate-800 tracking-tighter">{stats.totalSize}</span>
-                   <span className="text-xs text-slate-400 font-bold ml-1">KB</span>
+                   <span className="text-xl font-black text-slate-800 tracking-tighter">{formatBytes(stats.totalSize).split(' ')[0]}</span>
+                   <span className="text-xs text-slate-400 font-bold ml-1">{formatBytes(stats.totalSize).split(' ')[1]}</span>
                 </div>
              </div>
              
@@ -301,27 +311,32 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                 {/* Chat Messages - Blue */}
                 <div 
                    className="bg-blue-600 h-full border-r border-white" 
-                   style={{ width: `${Math.min(100, (parseFloat(stats.chatMessagesSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                   style={{ width: `${Math.min(100, (stats.chatMessagesSize / stats.totalSize) * 100)}%` }} 
                 />
                 {/* Character Data - Purple */}
                 <div 
                    className="bg-purple-500 h-full border-r border-white" 
-                   style={{ width: `${Math.min(100, (parseFloat(stats.characterDataSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                   style={{ width: `${Math.min(100, (stats.characterDataSize / stats.totalSize) * 100)}%` }} 
                 />
                 {/* Chat Images - Green */}
                 <div 
                    className="bg-emerald-500 h-full border-r border-white" 
-                   style={{ width: `${Math.min(100, (parseFloat(stats.chatImagesSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                   style={{ width: `${Math.min(100, (stats.chatImagesSize / stats.totalSize) * 100)}%` }} 
                 />
                  {/* Other Images - Teal */}
                  <div 
                    className="bg-teal-500 h-full border-r border-white" 
-                   style={{ width: `${Math.min(100, (parseFloat(stats.otherImagesSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                   style={{ width: `${Math.min(100, (stats.otherImagesSize / stats.totalSize) * 100)}%` }} 
                 />
                  {/* World Books - Orange */}
                  <div 
-                   className="bg-orange-500 h-full" 
-                   style={{ width: `${Math.min(100, (parseFloat(stats.worldBooksSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                   className="bg-orange-500 h-full border-r border-white" 
+                   style={{ width: `${Math.min(100, (stats.worldBooksSize / stats.totalSize) * 100)}%` }} 
+                />
+                 {/* System Data - Slate */}
+                 <div 
+                   className="bg-slate-500 h-full" 
+                   style={{ width: `${Math.min(100, (stats.otherDataSize / stats.totalSize) * 100)}%` }} 
                 />
              </div>
 
@@ -340,7 +355,7 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                        <item.icon className={`w-3 h-3 ${item.color}`} />
                        <span className={`text-[10px] font-bold ${item.color}`}>{item.label}</span>
                      </div>
-                     <span className="text-[10px] font-mono text-slate-500">{item.value} KB</span>
+                     <span className="text-[10px] font-mono text-slate-500">{formatBytes(item.value)}</span>
                   </div>
                 ))}
              </div>
@@ -488,7 +503,7 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                       <br/>
                       <span className="text-orange-500 font-bold">此操作不可撤销。</span>
                       <br/><br/>
-                      <span className="text-xs text-slate-400">TARGET: {stats.chatImagesSize} KB / {stats.imageStats.categories[IMAGE_CATEGORIES.CHAT_IMAGES]?.count || 0} FILES</span>
+                      <span className="text-xs text-slate-400">TARGET: {formatBytes(stats.chatImagesSize)} / {stats.imageStats.categories[IMAGE_CATEGORIES.CHAT_IMAGES]?.count || 0} FILES</span>
                    </p>
 
                    <div className="flex gap-3">

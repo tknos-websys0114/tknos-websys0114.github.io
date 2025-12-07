@@ -2662,6 +2662,10 @@
     background-color: var(--color-slate-300);
   }
 
+  .bg-slate-500 {
+    background-color: var(--color-slate-500);
+  }
+
   .bg-slate-800 {
     background-color: var(--color-slate-800);
   }
