@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Download, Upload, Trash2, Database, AlertTriangle, FileText, Archive, Image as ImageIcon, Check, HardDrive, PieChart, Save, RefreshCw, Server } from 'lucide-react';
+import { Download, Upload, Trash2, Database, AlertTriangle, FileText, Archive, Image as ImageIcon, Check, HardDrive, PieChart, Save, RefreshCw, Server, User, MessageSquare, Eraser } from 'lucide-react';
 import { db, STORES } from '../utils/db';
-import { exportAllImagesWithCategory, importAllImages, clearAllImages, getImageCategoryStats } from '../utils/imageDB';
+import { exportAllImagesWithCategory, importAllImages, clearAllImages, getImageCategoryStats, IMAGE_CATEGORIES, listAllImages, deleteImage } from '../utils/imageDB';
 import { clearCache } from '../utils/chatCache';
 import JSZip from 'jszip';
 import { motion, AnimatePresence } from 'motion/react';
@@ -13,11 +13,13 @@ interface DataManagementProps {
 
 export default function DataManagement({ onBack }: DataManagementProps) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showClearChatImagesConfirm, setShowClearChatImagesConfirm] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
   const [showExportSuccess, setShowExportSuccess] = useState(false);
   const [showImportSuccess, setShowImportSuccess] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   
   const [stats, setStats] = useState({
     totalSize: '0.00',
@@ -27,6 +29,8 @@ export default function DataManagement({ onBack }: DataManagementProps) {
     chatSettingsSize: '0.00',
     worldBooksSize: '0.00',
     otherDataSize: '0.00',
+    chatImagesSize: '0.00',
+    otherImagesSize: '0.00',
     imageStats: {
       totalImages: 0,
       totalSize: '0.00',
@@ -51,12 +55,17 @@ export default function DataManagement({ onBack }: DataManagementProps) {
       const chatsSize = await db.getStoreSize(STORES.CHATS);
 
       const otherDataSize = apiSettingsSize + appearanceSize + miscSize + chatsSize;
-      const totalSize = userDataSize + chatMessagesSize + characterDataSize + 
-                       chatSettingsSize + worldBooksSize + otherDataSize;
-
+      
       const imageStats = await getImageCategoryStats();
       const totalImages = Object.values(imageStats).reduce((sum, { count }) => sum + count, 0);
       const totalImageSize = Object.values(imageStats).reduce((sum, { size }) => sum + parseFloat(size), 0);
+
+      const chatImagesSizeStr = imageStats[IMAGE_CATEGORIES.CHAT_IMAGES]?.size || '0.00';
+      const chatImagesSize = parseFloat(chatImagesSizeStr);
+      const otherImagesSize = totalImageSize - chatImagesSize;
+
+      const totalSize = userDataSize + chatMessagesSize + characterDataSize + 
+                       chatSettingsSize + worldBooksSize + otherDataSize + (totalImageSize * 1024);
 
       setStats({
         totalSize: (totalSize / 1024).toFixed(2),
@@ -66,6 +75,8 @@ export default function DataManagement({ onBack }: DataManagementProps) {
         chatSettingsSize: (chatSettingsSize / 1024).toFixed(2),
         worldBooksSize: (worldBooksSize / 1024).toFixed(2),
         otherDataSize: (otherDataSize / 1024).toFixed(2),
+        chatImagesSize: chatImagesSize.toFixed(2),
+        otherImagesSize: otherImagesSize.toFixed(2),
         imageStats: {
           totalImages,
           totalSize: totalImageSize.toFixed(2),
@@ -201,6 +212,7 @@ export default function DataManagement({ onBack }: DataManagementProps) {
   };
 
   const handleClearData = async () => {
+    setIsClearing(true);
     try {
       await db.clearAll();
       await clearAllImages();
@@ -211,6 +223,32 @@ export default function DataManagement({ onBack }: DataManagementProps) {
     } catch (error) {
       console.error('Clear failed:', error);
       alert('清除失败');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  const handleClearChatImages = async () => {
+    setIsClearing(true);
+    try {
+      const allImages = await listAllImages();
+      const chatImages = allImages.filter(img => img.category === IMAGE_CATEGORIES.CHAT_IMAGES);
+      
+      console.log(`Deleting ${chatImages.length} chat images...`);
+
+      for (const img of chatImages) {
+        await deleteImage(img.originalKey);
+      }
+
+      setClearSuccess(true);
+      setShowClearChatImagesConfirm(false);
+      await loadStats();
+      setTimeout(() => setClearSuccess(false), 2000);
+    } catch (error) {
+      console.error('Clear chat images failed:', error);
+      alert('清除失败');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -232,7 +270,7 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                   <span className="text-xs font-bold tracking-wider uppercase">
                     {showExportSuccess && 'ARCHIVE_EXPORT_COMPLETE'}
                     {showImportSuccess && 'DATA_RESTORED_REBOOTING'}
-                    {clearSuccess && 'SYSTEM_PURGED_REBOOTING'}
+                    {clearSuccess && 'OPERATION_COMPLETE'}
                   </span>
                 </div>
               </motion.div>
@@ -260,14 +298,27 @@ export default function DataManagement({ onBack }: DataManagementProps) {
              
              {/* Storage Bar - Sharp */}
              <div className="h-3 w-full bg-slate-100 border border-slate-200 flex mb-6">
+                {/* Chat Messages - Blue */}
                 <div 
                    className="bg-blue-600 h-full border-r border-white" 
                    style={{ width: `${Math.min(100, (parseFloat(stats.chatMessagesSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
                 />
+                {/* Character Data - Purple */}
+                <div 
+                   className="bg-purple-500 h-full border-r border-white" 
+                   style={{ width: `${Math.min(100, (parseFloat(stats.characterDataSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                />
+                {/* Chat Images - Green */}
                 <div 
                    className="bg-emerald-500 h-full border-r border-white" 
-                   style={{ width: `${Math.min(100, (parseFloat(stats.imageStats.totalSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                   style={{ width: `${Math.min(100, (parseFloat(stats.chatImagesSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
                 />
+                 {/* Other Images - Teal */}
+                 <div 
+                   className="bg-teal-500 h-full border-r border-white" 
+                   style={{ width: `${Math.min(100, (parseFloat(stats.otherImagesSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
+                />
+                 {/* World Books - Orange */}
                  <div 
                    className="bg-orange-500 h-full" 
                    style={{ width: `${Math.min(100, (parseFloat(stats.worldBooksSize) / parseFloat(stats.totalSize)) * 100)}%` }} 
@@ -277,8 +328,10 @@ export default function DataManagement({ onBack }: DataManagementProps) {
              {/* Legend Grid - Tech Table */}
              <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: '聊天记录', value: stats.chatMessagesSize, icon: FileText, color: 'text-blue-600' },
-                  { label: '图片媒体', value: stats.imageStats.totalSize, icon: ImageIcon, color: 'text-emerald-600' },
+                  { label: '聊天记录', value: stats.chatMessagesSize, icon: MessageSquare, color: 'text-blue-600' },
+                  { label: '人物档案', value: stats.characterDataSize, icon: User, color: 'text-purple-600' },
+                  { label: '聊天图片', value: stats.chatImagesSize, icon: ImageIcon, color: 'text-emerald-600' },
+                  { label: '其他媒体', value: stats.otherImagesSize, icon: ImageIcon, color: 'text-teal-600' },
                   { label: '世界书', value: stats.worldBooksSize, icon: Database, color: 'text-orange-600' },
                   { label: '系统配置', value: stats.otherDataSize, icon: Archive, color: 'text-slate-600' },
                 ].map((item, idx) => (
@@ -353,6 +406,15 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                   </div>
                 </button>
 
+                {/* Clear Chat Images Button */}
+                <button
+                  onClick={() => setShowClearChatImagesConfirm(true)}
+                  className="w-full p-4 border border-slate-200 bg-slate-50/50 text-slate-600 font-bold text-sm flex items-center justify-center gap-2 active:bg-slate-100 active:border-slate-300 hover:bg-slate-100 hover:border-slate-300 transition-all group"
+                >
+                  <Eraser className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+                  清除缓存图片 (CLEAR CACHE IMAGES)
+                </button>
+
                 {/* Clear Data */}
                 <button
                   onClick={() => setShowClearConfirm(true)}
@@ -398,6 +460,50 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                         className="flex-1 py-3 bg-red-600 text-white font-bold text-sm active:bg-red-700 hover:bg-red-700 transition-colors shadow-lg shadow-red-200 uppercase tracking-wider"
                       >
                         确认清除
+                      </button>
+                   </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Clear Chat Images Confirmation Modal */}
+          <AnimatePresence>
+            {showClearChatImagesConfirm && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] px-6">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-white border-2 border-slate-800 p-6 w-full max-w-sm shadow-[8px_8px_0px_rgba(0,0,0,0.2)] relative"
+                >
+                   {/* Warning Header */}
+                   <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-4">
+                      <ImageIcon className="w-6 h-6 text-orange-500" />
+                      <h3 className="text-lg font-black text-slate-800 tracking-tight uppercase">清理媒体缓存</h3>
+                   </div>
+                   
+                   <p className="text-sm text-slate-600 mb-8 leading-relaxed font-medium">
+                      是否确认清除所有聊天图片？
+                      <br/>
+                      <span className="text-orange-500 font-bold">此操作不可撤销。</span>
+                      <br/><br/>
+                      <span className="text-xs text-slate-400">TARGET: {stats.chatImagesSize} KB / {stats.imageStats.categories[IMAGE_CATEGORIES.CHAT_IMAGES]?.count || 0} FILES</span>
+                   </p>
+
+                   <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowClearChatImagesConfirm(false)}
+                        className="flex-1 py-3 border border-slate-300 text-slate-600 font-bold text-sm active:bg-slate-50 hover:bg-slate-50 transition-colors uppercase tracking-wider"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={handleClearChatImages}
+                        disabled={isClearing}
+                        className="flex-1 py-3 bg-slate-800 text-white font-bold text-sm active:bg-slate-900 hover:bg-slate-900 transition-colors shadow-lg shadow-slate-200 uppercase tracking-wider"
+                      >
+                        {isClearing ? '处理中...' : '确认清理'}
                       </button>
                    </div>
                 </motion.div>
