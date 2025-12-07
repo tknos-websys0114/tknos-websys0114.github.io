@@ -11,6 +11,7 @@ interface Character {
   avatar: string | null;
   avatarUrl?: string | null;
   description: string;
+  serialNumber?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -247,7 +248,7 @@ export default function CharacterList({ onClose, onEditUser, onEditCharacter }: 
                     <div className="flex items-center gap-4">
                        {/* ID Number */}
                        <span className="text-[10px] font-mono text-[#8C8C89] w-6 text-right transition-colors group-active:text-[#B93636] group-hover:text-[#B93636]">
-                          {(index + 1).toString().padStart(3, '0')}
+                          {char.serialNumber || (index + 1).toString().padStart(3, '0')}
                        </span>
 
                        {/* Avatar Thumb */}

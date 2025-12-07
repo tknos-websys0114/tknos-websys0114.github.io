@@ -1854,6 +1854,10 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .grid-cols-\[1fr_80px\] {
+    grid-template-columns: 1fr 80px;
+  }
+
   .grid-cols-\[60px_1fr\] {
     grid-template-columns: 60px 1fr;
   }

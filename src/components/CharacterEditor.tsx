@@ -9,6 +9,7 @@ interface Character {
   name: string;
   avatar: string | null;
   description: string;
+  serialNumber?: string;
   manifestDate?: string;
   worldBooks?: string[];
   createdAt: string;
@@ -32,6 +33,7 @@ interface CharacterEditorProps {
 
 export default function CharacterEditor({ onBack, character }: CharacterEditorProps) {
   const [name, setName] = useState('');
+  const [serialNumber, setSerialNumber] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarKey, setAvatarKey] = useState<string | null>(null);
   const [description, setDescription] = useState('');
@@ -49,6 +51,7 @@ export default function CharacterEditor({ onBack, character }: CharacterEditorPr
   useEffect(() => {
     if (character) {
       setName(character.name);
+      setSerialNumber(character.serialNumber || '');
       setDescription(character.description);
       setManifestDate(character.manifestDate || '');
       setWorldBooks(character.worldBooks || []);
@@ -104,6 +107,7 @@ export default function CharacterEditor({ onBack, character }: CharacterEditorPr
         const newCharacter: Character = {
           id: `char_${Date.now()}`,
           name: name.trim() || '未命名',
+          serialNumber: serialNumber.trim(),
           avatar: avatarKey,
           description: description.trim(),
           manifestDate: manifestDate.trim() || undefined,
@@ -118,6 +122,7 @@ export default function CharacterEditor({ onBack, character }: CharacterEditorPr
             ? {
                 ...char,
                 name: name.trim() || '未命名',
+                serialNumber: serialNumber.trim(),
                 avatar: avatarKey,
                 description: description.trim(),
                 manifestDate: manifestDate.trim() || undefined,
@@ -276,17 +281,31 @@ export default function CharacterEditor({ onBack, character }: CharacterEditorPr
             </div>
 
             <div className="space-y-4 mt-2">
-               <div>
-                  <label className="block text-[10px] font-mono text-[#8C8C89] uppercase tracking-wider mb-1">
-                     代号 / 姓名
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-[#EAE8E3] border-b-2 border-[#D6D3CC] px-3 py-2 text-lg font-bold text-[#2C2C2C] focus:outline-none focus:border-[#2C2C2C] focus:bg-white transition-colors placeholder:text-[#CCC]"
-                    placeholder="请输入姓名"
-                  />
+               <div className="grid grid-cols-[1fr_80px] gap-4">
+                 <div>
+                    <label className="block text-[10px] font-mono text-[#8C8C89] uppercase tracking-wider mb-1">
+                       代号 / 姓名
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-[#EAE8E3] border-b-2 border-[#D6D3CC] px-3 py-2 text-lg font-bold text-[#2C2C2C] focus:outline-none focus:border-[#2C2C2C] focus:bg-white transition-colors placeholder:text-[#CCC]"
+                      placeholder="请输入姓名"
+                    />
+                 </div>
+                 <div>
+                    <label className="block text-[10px] font-mono text-[#8C8C89] uppercase tracking-wider mb-1 flex items-center gap-1">
+                       <Tag className="w-3 h-3" /> 刀帐番号
+                    </label>
+                    <input
+                      type="text"
+                      value={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                      className="w-full bg-[#EAE8E3] border-b-2 border-[#D6D3CC] px-3 py-2 text-lg font-bold text-[#2C2C2C] font-mono text-center focus:outline-none focus:border-[#2C2C2C] focus:bg-white transition-colors placeholder:text-[#CCC]"
+                      placeholder="NO."
+                    />
+                 </div>
                </div>
                <div>
                   <label className="block text-[10px] font-mono text-[#8C8C89] uppercase tracking-wider mb-1 flex items-center gap-1">
