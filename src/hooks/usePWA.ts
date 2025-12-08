@@ -76,7 +76,7 @@ export function usePWA() {
         appleStatusBarStyle.setAttribute('name', 'apple-mobile-web-app-status-bar-style');
         document.head.appendChild(appleStatusBarStyle);
       }
-      appleStatusBarStyle.setAttribute('content', 'black-translucent');
+      appleStatusBarStyle.setAttribute('content', 'default');
 
       // Apple mobile web app title
       let appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
