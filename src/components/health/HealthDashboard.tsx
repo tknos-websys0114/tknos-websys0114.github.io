@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Moon, Flower2, Activity, Share2, X, Check, Users, User, ChevronRight } from "lucide-react";
+import { ChevronLeft, Moon, Flower2, Activity, Share2, X, Check, Users, User, ChevronRight, Stethoscope } from "lucide-react";
 import { db, STORES } from "../../utils/db";
 import { toast } from "sonner@2.0.3";
 
@@ -175,7 +175,7 @@ export default function HealthDashboard({ onClose, onNavigate }: HealthDashboard
              <div className="relative z-10 flex items-start justify-between">
                 <div>
                    <div className="w-12 h-12 bg-[#C1E1C1] text-[#6B8E23] flex items-center justify-center rounded-2xl mb-4">
-                      <Activity className="w-6 h-6" />
+                      <Stethoscope className="w-6 h-6" />
                    </div>
                    <h3 className="text-xl font-black text-[#5C6B7F] mb-1">诊断记录</h3>
                    <p className="text-xs text-[#8E9CB3] font-medium">

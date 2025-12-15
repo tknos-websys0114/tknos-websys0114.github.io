@@ -276,9 +276,7 @@ export default function ChatDetailSettings({ characterId, characterName, onClose
               }`}
             >
               <div 
-                className={`w-6 h-6 rounded-full transition-transform ${
-                  isDarkMode ? 'bg-[#121212]' : 'bg-white'
-                } ${
+                className={`w-6 h-6 rounded-full transition-transform bg-white ${
                   enableStickers ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
