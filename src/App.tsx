@@ -113,17 +113,13 @@ export default function App() {
         console.log('Initializing database...');
         await db.init();
         
-        // 注册 Service Worker
-        if ('serviceWorker' in navigator) {
-          try {
-            const registration = await navigator.serviceWorker.register('/sw.js');
-            // 请求通知权限
-            if ('Notification' in window && Notification.permission === 'default') {
-               await Notification.requestPermission();
-            }
-          } catch (error: any) {
-             console.warn('[SW] Service Worker registration issue:', error);
-          }
+        // 注意：Service Worker 的注册由 usePWA hook 处理，这里不再重复注册，
+        // 但我们需要请求通知权限，这部分保留（通常最好在用户交互时请求，但此处保留原有逻辑）
+        if ('Notification' in window && Notification.permission === 'default') {
+           // 稍微延迟请求，避免和页面加载冲突
+           setTimeout(() => {
+             Notification.requestPermission().catch(err => console.warn('Notification permission request failed', err));
+           }, 2000);
         }
 
         // 检查 URL 参数是否有 chatId (用于通知点击跳转)

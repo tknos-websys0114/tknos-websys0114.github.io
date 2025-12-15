@@ -15,7 +15,8 @@ if (typeof workbox !== 'undefined') {
   workbox.routing.registerRoute(
     ({ request }) => request.mode === 'navigate',
     new workbox.strategies.NetworkFirst({
-      cacheName: 'html-cache',
+      cacheName: 'html-cache-v2',
+      networkTimeoutSeconds: 3, // 3秒超时后使用缓存，防止白屏过久
       plugins: [
         new workbox.expiration.ExpirationPlugin({
           maxEntries: 1,
@@ -24,21 +25,37 @@ if (typeof workbox !== 'undefined') {
     })
   );
 
+  // 预缓存核心页面，解决首次安装后离线或弱网白屏问题
+  self.addEventListener('install', (event) => {
+    const urlsToCache = [
+      '/',
+      '/index.html',
+      '/manifest.json',
+      '/icon-192.png'
+    ];
+    event.waitUntil(
+      caches.open('html-cache-v2').then((cache) => {
+        console.log('[Service Worker] Pre-caching core files');
+        return cache.addAll(urlsToCache);
+      })
+    );
+  });
+
   // 2. JS/CSS: Stale While Revalidate (即时响应 + 后台更新)
   // 优先使用缓存（快），同时后台更新缓存（下次访问即为新版）
   workbox.routing.registerRoute(
     ({ request }) => request.destination === 'script' || request.destination === 'style',
     new workbox.strategies.StaleWhileRevalidate({
-      cacheName: 'static-resources',
+      cacheName: 'static-resources-v2',
     })
   );
 
-  // 3. 图片: Cache First (缓存优先)
+    // 3. 图片: Cache First (缓存优先)
   // 图片通常不变，缓存优先节省流量
   workbox.routing.registerRoute(
     ({ request }) => request.destination === 'image',
     new workbox.strategies.CacheFirst({
-      cacheName: 'image-cache',
+      cacheName: 'image-cache-v2',
       plugins: [
         new workbox.expiration.ExpirationPlugin({
           maxEntries: 100,

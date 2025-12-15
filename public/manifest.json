@@ -3,7 +3,7 @@
   "short_name": "Touken OS",
   "description": "刀剑乱舞模拟手机桌面系统",
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "orientation": "portrait",
