@@ -253,7 +253,7 @@ export default function HealthDashboard({ onClose, onNavigate }: HealthDashboard
                                     className="w-full bg-white/50 border border-white/60 px-4 py-3 rounded-2xl text-xs font-bold text-[#5C6B7F] flex items-center justify-between active:bg-white/70 transition-colors"
                                 >
                                     <div className="flex items-center gap-2 pl-1">
-                                        <span>{characters.find(c => c.id === settings.shareCharacterId)?.name || "选择角色"}</span>
+                                        <span>{characters.find(c => c.id === settings.shareCharacterId)?.name || "选择"}</span>
                                     </div>
                                     <ChevronRight className={`w-4 h-4 transition-transform ${isCharSelectOpen ? 'rotate-90' : ''}`} />
                                 </button>
@@ -263,7 +263,7 @@ export default function HealthDashboard({ onClose, onNavigate }: HealthDashboard
                                         <div className="fixed inset-0 z-10" onClick={() => setIsCharSelectOpen(false)} />
                                         <div className="absolute top-full left-0 right-0 mt-2 bg-white/90 backdrop-blur-xl border border-white/60 rounded-2xl shadow-lg z-20 max-h-48 overflow-y-auto p-1 animate-in fade-in zoom-in-95">
                                             {characters.length === 0 && (
-                                                <div className="p-3 text-center text-[10px] text-[#9FA8DA]">暂无角色数据</div>
+                                                <div className="p-3 text-center text-[10px] text-[#9FA8DA]">暂无刀剑男士</div>
                                             )}
                                             {characters.map(char => (
                                                 <button
