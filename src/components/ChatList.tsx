@@ -2,7 +2,7 @@ import { MessageCircle, Mail, Settings, UserPlus, Users, X } from "lucide-react"
 import { useState, useEffect } from "react";
 import ChatSettings from "./ChatSettings";
 import { db, STORES } from "../utils/db";
-import { getDisplayName } from "../utils/chatCache";
+import { getDisplayName, globalCache } from "../utils/chatCache";
 
 interface Character {
   id: string;
@@ -37,10 +37,18 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showSelectCharacter, setShowSelectCharacter] = useState(false);
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [isDarkMode, setIsDarkMode] = useState(() => globalCache.chatSettings?.darkMode || false);
 
   useEffect(() => {
+    loadGlobalSettings();
     loadChats();
     loadCharacters();
+
+    const updateTheme = () => {
+      setIsDarkMode(globalCache.chatSettings?.darkMode || false);
+      loadChats();
+    };
+    window.addEventListener('chat-settings-updated', updateTheme);
 
     // 请求通知权限
     if ('Notification' in window && Notification.permission === 'default') {
@@ -64,6 +72,7 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
     }
     
     return () => {
+      window.removeEventListener('chat-settings-updated', updateTheme);
       // 清理监听器
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
@@ -119,6 +128,28 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
     const month = msgTime.getMonth() + 1;
     const day = msgTime.getDate();
     return `${year}/${month}/${day}`;
+  };
+
+  const loadGlobalSettings = async () => {
+    try {
+      const settings = await db.get<any>(STORES.CHATS, 'chat_settings');
+      if (settings) {
+        // 如果缓存为空，初始化它
+        if (!globalCache.chatSettings) {
+          globalCache.chatSettings = settings;
+        } else {
+          // 否则更新缓存
+          globalCache.chatSettings = { ...globalCache.chatSettings, ...settings };
+        }
+        
+        // 更新本地状态
+        if (settings.darkMode !== undefined) {
+          setIsDarkMode(settings.darkMode);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load global chat settings:', error);
+    }
   };
 
   const loadChats = async () => {
@@ -243,20 +274,20 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+    <div className={`fixed inset-0 z-50 flex flex-col ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
       {/* 顶部栏 */}
-      <div className="bg-white">
+      <div className={isDarkMode ? 'bg-[#121212]' : 'bg-white'}>
         <div className="h-16 flex items-center justify-between px-4 relative">
           <button
             onClick={onClose}
             className="p-2 -ml-2 active:opacity-60 transition-opacity"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "white" : "black"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 18l-6-6 6-6"/>
             </svg>
           </button>
           
-          <h1 className="absolute left-1/2 -translate-x-1/2 font-semibold text-[18px] text-[#333]">
+          <h1 className={`absolute left-1/2 -translate-x-1/2 font-semibold text-[18px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
             {getTitle()}
           </h1>
           
@@ -265,7 +296,7 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
               onClick={handleAddChat}
               className="p-2 -mr-2 active:opacity-60 transition-opacity relative font-normal"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333333" strokeWidth="2.5">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "white" : "#333333"} strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
@@ -282,22 +313,22 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
             className="fixed inset-0 z-[51]" 
             onClick={() => setShowAddMenu(false)}
           />
-          <div className="absolute right-4 top-[68px] bg-white rounded-lg shadow-lg z-[52] overflow-hidden">
+          <div className={`absolute right-4 top-[68px] rounded-lg shadow-lg z-[52] overflow-hidden ${isDarkMode ? 'bg-[#1e1e1e] border border-[#2d2d2d]' : 'bg-white'}`}>
             <button
               onClick={handleCreateGroup}
-              className="w-full flex items-center gap-3 px-4 py-3 active:bg-[#f5f5f5] transition-colors"
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${isDarkMode ? 'active:bg-[#2d2d2d]' : 'active:bg-[#f5f5f5]'}`}
             >
-              <Users className="w-6 h-6 text-[#333]" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-              <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] whitespace-nowrap">
+              <Users className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-[#333]'}`} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+              <span className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 创建群聊
               </span>
             </button>
             <button
               onClick={handleAddFriend}
-              className="w-full flex items-center gap-3 px-4 py-3 active:bg-[#f5f5f5] transition-colors"
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${isDarkMode ? 'active:bg-[#2d2d2d]' : 'active:bg-[#f5f5f5]'}`}
             >
-              <UserPlus className="w-6 h-6 text-[#333]" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-              <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] whitespace-nowrap">
+              <UserPlus className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-[#333]'}`} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+              <span className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] whitespace-nowrap ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 加好友
               </span>
             </button>
@@ -308,26 +339,26 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
       {/* 选择刀剑男士弹窗 */}
       {showSelectCharacter && (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-64 max-h-96 flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[#f0f0f0]">
-              <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333]">
+          <div className={`rounded-xl w-64 max-h-96 flex flex-col shadow-2xl ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
+            <div className={`flex items-center justify-between px-5 py-3 border-b ${isDarkMode ? 'border-[#2d2d2d]' : 'border-[#f0f0f0]'}`}>
+              <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 发起聊天
               </h3>
               <button
                 onClick={() => setShowSelectCharacter(false)}
-                className="p-1 active:bg-[#f5f5f5] rounded-full transition-colors"
+                className={`p-1 rounded-full transition-colors ${isDarkMode ? 'active:bg-[#2d2d2d]' : 'active:bg-[#f5f5f5]'}`}
               >
-                <X className="w-5 h-5 text-[#666]" strokeWidth={2} />
+                <X className={`w-5 h-5 ${isDarkMode ? 'text-[#a0a0a0]' : 'text-[#666]'}`} strokeWidth={2} />
               </button>
             </div>
             
             <div className="flex-1 overflow-y-auto">
               {characters.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 px-4">
-                  <p className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#999]">
+                  <p className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                     暂无刀剑男士
                   </p>
-                  <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] text-[#ccc] mt-1">
+                  <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] mt-1 ${isDarkMode ? 'text-[#666]' : 'text-[#ccc]'}`}>
                     请先在组织中添加
                   </p>
                 </div>
@@ -336,10 +367,10 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
                   <button
                     key={character.id}
                     onClick={() => handleSelectCharacter(character)}
-                    className="w-full flex items-center px-5 py-2.5 active:bg-[#f5f5f5] transition-colors"
+                    className={`w-full flex items-center px-5 py-2.5 transition-colors ${isDarkMode ? 'active:bg-[#2d2d2d]' : 'active:bg-[#f5f5f5]'}`}
                   >
                     <div className="flex-1 text-center">
-                      <h3 className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333]">
+                      <h3 className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                         {character.name}
                       </h3>
                     </div>
@@ -352,47 +383,51 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
       )}
 
       {/* 聊天列表 */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className={`flex-1 overflow-y-auto ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
         {activeTab === 'messages' && (
           <>
             {chats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 px-4">
-                <div className="w-16 h-16 rounded-full bg-[#f5f5f5] flex items-center justify-center mb-3">
-                  <MessageCircle className="w-9 h-9 text-[#ccc]" strokeWidth={2.5} />
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}>
+                  <MessageCircle className={`w-9 h-9 ${isDarkMode ? 'text-[#666]' : 'text-[#ccc]'}`} strokeWidth={2.5} />
                 </div>
-                <p className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#999]">
+                <p className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                   暂无消息
                 </p>
               </div>
             ) : (
-              <div className="bg-white">
+              <div className={isDarkMode ? 'bg-[#121212]' : 'bg-white'}>
                 {chats.map((chat, index) => (
                   <div key={chat.id}>
                     <button
                       onClick={() => handleChatClick(chat.id)}
-                      className={`w-full px-4 py-3.5 active:bg-[#f5f5f5] transition-colors flex items-start text-left ${chat.isPinned ? 'bg-[#f9f9f9]' : 'bg-white'}`}
+                      className={`w-full px-4 py-3.5 transition-colors flex items-start text-left ${
+                        isDarkMode 
+                          ? `active:bg-[#1e1e1e] ${chat.isPinned ? 'bg-[#1a1a1a]' : 'bg-[#121212]'}` 
+                          : `active:bg-[#f5f5f5] ${chat.isPinned ? 'bg-[#f9f9f9]' : 'bg-white'}`
+                      }`}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2 min-w-0">
-                            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[17px] text-[#333] truncate">
+                            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[17px] truncate ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                               {chat.remark || ((chat.name === '未知角色' || !chat.name) && characters.find(c => c.id === chat.id)?.name) || chat.name}
                             </h3>
                             {chat.memberCount && (
-                              <span className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999] flex-shrink-0">
+                              <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] flex-shrink-0 ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                                 ({chat.memberCount})
                               </span>
                             )}
                           </div>
                           {chat.time && (
-                            <span className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] text-[#999] flex-shrink-0 ml-2">
+                            <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] flex-shrink-0 ml-2 ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                               {chat.time}
                             </span>
                           )}
                         </div>
                         
                         <div className="flex items-center justify-between">
-                          <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999] truncate flex-1 pr-2">
+                          <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] truncate flex-1 pr-2 ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                             {(() => {
                               // 处理消息预览中的发送者名字
                               let senderName = chat.lastSender;
@@ -420,7 +455,7 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
                     </button>
                     
                     {index < chats.length - 1 && (
-                      <div className="border-b border-[#f0f0f0]" />
+                      <div className={`border-b ${isDarkMode ? 'border-[#2d2d2d]' : 'border-[#f0f0f0]'}`} />
                     )}
                   </div>
                 ))}
@@ -431,10 +466,10 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
         
         {activeTab === 'notifications' && (
           <div className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="w-16 h-16 rounded-full bg-[#f5f5f5] flex items-center justify-center mb-3">
-              <Mail className="w-9 h-9 text-[#ccc]" strokeWidth={2.5} />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}>
+              <Mail className={`w-9 h-9 ${isDarkMode ? 'text-[#666]' : 'text-[#ccc]'}`} strokeWidth={2.5} />
             </div>
-            <p className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#999]">
+            <p className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
               暂无信件
             </p>
           </div>
@@ -444,16 +479,16 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
       </div>
 
       {/* 底部导航栏 */}
-      <div className="h-[64px] bg-white flex items-center justify-around px-4 safe-area-inset-bottom">
+      <div className={`h-[64px] flex items-center justify-around px-4 safe-area-inset-bottom ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
         <button
           onClick={() => setActiveTab('messages')}
           className="flex flex-col items-center justify-center gap-1 py-1.5 px-6 active:opacity-60 transition-opacity"
         >
           <MessageCircle 
-            className={`w-6 h-6 ${activeTab === 'messages' ? 'text-[#7B9E7B]' : 'text-[#999]'}`}
+            className={`w-6 h-6 ${activeTab === 'messages' ? 'text-[#7B9E7B]' : (isDarkMode ? 'text-[#888]' : 'text-[#999]')}`}
             strokeWidth={2.5}
           />
-          <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] ${activeTab === 'messages' ? 'text-[#7B9E7B]' : 'text-[#999]'}`}>
+          <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] ${activeTab === 'messages' ? 'text-[#7B9E7B]' : (isDarkMode ? 'text-[#888]' : 'text-[#999]')}`}>
             消息
           </span>
         </button>
@@ -463,10 +498,10 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
           className="flex flex-col items-center justify-center gap-1 py-1.5 px-6 active:opacity-60 transition-opacity"
         >
           <Mail 
-            className={`w-6 h-6 ${activeTab === 'notifications' ? 'text-[#7B9E7B]' : 'text-[#999]'}`}
+            className={`w-6 h-6 ${activeTab === 'notifications' ? 'text-[#7B9E7B]' : (isDarkMode ? 'text-[#888]' : 'text-[#999]')}`}
             strokeWidth={2.5}
           />
-          <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] ${activeTab === 'notifications' ? 'text-[#7B9E7B]' : 'text-[#999]'}`}>
+          <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] ${activeTab === 'notifications' ? 'text-[#7B9E7B]' : (isDarkMode ? 'text-[#888]' : 'text-[#999]')}`}>
             信箱
           </span>
         </button>
@@ -476,10 +511,10 @@ export default function ChatList({ onClose, onOpenChat }: ChatListProps) {
           className="flex flex-col items-center justify-center gap-1 py-1.5 px-6 active:opacity-60 transition-opacity"
         >
           <Settings 
-            className={`w-6 h-6 ${activeTab === 'settings' ? 'text-[#7B9E7B]' : 'text-[#999]'}`}
+            className={`w-6 h-6 ${activeTab === 'settings' ? 'text-[#7B9E7B]' : (isDarkMode ? 'text-[#888]' : 'text-[#999]')}`}
             strokeWidth={2.5}
           />
-          <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] ${activeTab === 'settings' ? 'text-[#7B9E7B]' : 'text-[#999]'}`}>
+          <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] ${activeTab === 'settings' ? 'text-[#7B9E7B]' : (isDarkMode ? 'text-[#888]' : 'text-[#999]')}`}>
             设置
           </span>
         </button>

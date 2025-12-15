@@ -135,6 +135,43 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
   
   const [worldBooks, setWorldBooks] = useState<WorldBook[]>([]);
   const [character, setCharacter] = useState<Character | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(() => globalCache.chatSettings?.darkMode || false);
+
+  useEffect(() => {
+    const updateTheme = () => {
+      setIsDarkMode(globalCache.chatSettings?.darkMode || false);
+    };
+    window.addEventListener('chat-settings-updated', updateTheme);
+    
+    // 初始化时如果缓存为空，尝试从 DB 加载
+    const loadGlobalSettings = async () => {
+      if (!globalCache.chatSettings) {
+        try {
+          const settings = await db.get<any>(STORES.CHATS, 'chat_settings');
+          if (settings) {
+            globalCache.chatSettings = settings;
+            if (settings.darkMode !== undefined) {
+              setIsDarkMode(settings.darkMode);
+            }
+            // 更新其他依赖于全局设置的状态
+            if (settings.userAvatar) setUserAvatarKey(settings.userAvatar);
+            if (settings.chatBackground) setChatBackgroundKey(settings.chatBackground);
+            if (settings.bubbleStyles) {
+               setUserBubbleStyle(settings.bubbleStyles.user);
+               setCharBubbleStyle(settings.bubbleStyles.character);
+               setUserQuoteStyle(settings.bubbleStyles.userQuote);
+               setCharQuoteStyle(settings.bubbleStyles.characterQuote);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load global chat settings in PrivateChat', e);
+        }
+      }
+    };
+    loadGlobalSettings();
+
+    return () => window.removeEventListener('chat-settings-updated', updateTheme);
+  }, []);
   const [isAIReplying, setIsAIReplying] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -199,7 +236,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
           // 旧的 Base64 格式
           setCharacterAvatar(characterAvatarKey);
         } else {
-          // 新的 key 格式，从图片数据库读取
+          // 新�� key 格式，从图片数据库读取
           const url = await getImage(characterAvatarKey);
           setCharacterAvatar(url);
         }
@@ -793,7 +830,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
           }
           
           const visionData = await visionResponse.json();
-          const imageDescription = visionData.choices?.[0]?.message?.content || '（无法识别图片内容）';
+          const imageDescription = visionData.choices?.[0]?.message?.content || '（��法识别图片内容）';
           
           console.log('[降级方案] 图片识别结果:', imageDescription);
           
@@ -1782,19 +1819,19 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-[60] flex flex-col">
+    <div className={`fixed inset-0 z-[60] flex flex-col ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
       {/* 顶部导航栏 */}
-      <div className="h-16 bg-white flex items-center justify-between px-4">
+      <div className={`h-16 flex items-center justify-between px-4 ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
         <button
           onClick={handleClose}
           className="p-2 -ml-2 active:opacity-60 transition-opacity"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "white" : "black"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
         
-        <h1 className="font-semibold text-[18px] text-[#333] text-center">
+        <h1 className={`font-semibold text-[18px] text-center ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
           {displayName}
         </h1>
         
@@ -1802,7 +1839,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
           onClick={() => setShowSettings(true)}
           className="p-2 -mr-2 active:opacity-60 transition-opacity"
         >
-          <MoreHorizontal className="w-6 h-6 text-[#333]" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          <MoreHorizontal className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-[#333]'}`} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </button>
       </div>
 
@@ -1811,8 +1848,12 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto px-4 py-4"
         style={{
-          backgroundColor: chatBackground ? 'transparent' : 'white',
-          backgroundImage: chatBackground ? `url(${chatBackground})` : 'none',
+          backgroundColor: chatBackground ? 'transparent' : (isDarkMode ? '#121212' : 'white'),
+          backgroundImage: chatBackground 
+            ? (isDarkMode 
+                ? `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url(${chatBackground})` 
+                : `url(${chatBackground})`)
+            : 'none',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
@@ -2096,15 +2137,15 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
 
       {/* 底部输入栏 */}
       {!isMultiSelectMode && (
-        <div className="bg-white px-3 py-2 safe-area-inset-bottom">
+        <div className={`px-3 py-2 safe-area-inset-bottom ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
         {/* 回复状态栏 */}
         {replyingTo && (
-          <div className="mb-2 flex items-center justify-between bg-[#f5f5f5] p-2 rounded-lg">
+          <div className={`mb-2 flex items-center justify-between p-2 rounded-lg ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}>
             <div className="flex-1 min-w-0">
-              <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] text-[#666]">
+              <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] ${isDarkMode ? 'text-[#aaa]' : 'text-[#666]'}`}>
                 回复 {replyingTo.senderId === 'user' ? userNickname : displayName}
               </p>
-              <p className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[13px] text-[#333] truncate">
+              <p className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[13px] truncate ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 {replyingTo.isPlaceholderImage || replyingTo.imageUrl || replyingTo.imageKey 
                   ? '[图片]' 
                   : replyingTo.stickerId 
@@ -2114,16 +2155,16 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
             </div>
             <button 
               onClick={handleCancelReply}
-              className="ml-2 p-1 active:bg-[#e8e8e8] rounded transition-colors"
+              className={`ml-2 p-1 rounded transition-colors ${isDarkMode ? 'active:bg-[#2d2d2d]' : 'active:bg-[#e8e8e8]'}`}
             >
-              <X className="w-4 h-4 text-[#666]" />
+              <X className={`w-4 h-4 ${isDarkMode ? 'text-[#aaa]' : 'text-[#666]'}`} />
             </button>
           </div>
         )}
         
         {/* 待发送图片预览 */}
         {pendingImagePreview && (
-          <div className="mb-2 flex items-start gap-2 bg-[#f5f5f5] p-2 rounded-lg">
+          <div className={`mb-2 flex items-start gap-2 p-2 rounded-lg ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}>
             <img 
               src={pendingImagePreview} 
               alt="待发送" 
@@ -2131,9 +2172,9 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
             />
             <button 
               onClick={handleCancelPendingImage}
-              className="ml-auto p-1 active:bg-[#e8e8e8] rounded transition-colors"
+              className={`ml-auto p-1 rounded transition-colors ${isDarkMode ? 'active:bg-[#2d2d2d]' : 'active:bg-[#e8e8e8]'}`}
             >
-              <X className="w-4 h-4 text-[#666]" />
+              <X className={`w-4 h-4 ${isDarkMode ? 'text-[#aaa]' : 'text-[#666]'}`} />
             </button>
           </div>
         )}
@@ -2147,7 +2188,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               isAIReplying ? 'opacity-40' : 'active:opacity-60'
             }`}
           >
-            <svg className="w-5 h-5 text-[#333]" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className={`w-5 h-5 ${isDarkMode ? 'text-white' : 'text-[#333]'}`} viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9Z"></path>
               <path d="M20 1L20.7 3.3L23 4L20.7 4.7L20 7L19.3 4.7L17 4L19.3 3.3Z" fill="currentColor"></path>
               <path d="M4 17L4.5 18.5L6 19L4.5 19.5L4 21L3.5 19.5L2 19L3.5 18.5Z" fill="currentColor"></path>
@@ -2155,7 +2196,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
           </button>
 
           {/* 中间输入框 */}
-          <div className="flex-1 bg-[#f5f5f5] rounded-lg px-4 py-2 min-h-[40px] max-h-[100px] flex items-center">
+          <div className={`flex-1 rounded-lg px-4 py-2 min-h-[40px] max-h-[100px] flex items-center ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}>
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -2164,7 +2205,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
                 setShowActionsMenu(false);
                 setShowStickerPicker(false);
               }}
-              className="w-full resize-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] placeholder:text-[#999] bg-transparent leading-normal"
+              className={`w-full resize-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] bg-transparent leading-normal ${isDarkMode ? 'text-white placeholder:text-[#666]' : 'text-[#333] placeholder:text-[#999]'}`}
               rows={1}
               style={{
                 maxHeight: '68px',
@@ -2179,7 +2220,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               onClick={() => setShowActionsMenu(!showActionsMenu)}
               className="w-10 h-10 flex items-center justify-center active:opacity-60 transition-opacity flex-shrink-0"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333333" strokeWidth="2.5">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isDarkMode ? "white" : "#333333"} strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
@@ -2198,7 +2239,7 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
 
       {/* 功能菜单 (表情、图片等) */}
       {showActionsMenu && (
-        <div className="absolute bottom-[70px] right-3 bg-white rounded-xl shadow-lg z-[998] p-2">
+        <div className={`absolute bottom-[70px] right-3 rounded-xl shadow-lg z-[998] p-2 ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
           <div className="grid grid-cols-4 gap-2">
             {/* 表情包 */}
             <button 
@@ -2208,8 +2249,12 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               }}
               className="p-0 bg-transparent border-none cursor-pointer"
             >
-              <div className="w-[50px] h-[50px] bg-white rounded-lg flex items-center justify-center hover:bg-[#f5f5f5] active:bg-[#e8e8e8] transition-colors">
-                <Smile className="w-[24px] h-[24px] text-[#333]" strokeWidth={2.5} />
+              <div className={`w-[50px] h-[50px] rounded-lg flex items-center justify-center transition-colors ${
+                isDarkMode 
+                  ? 'bg-[#1e1e1e] hover:bg-[#2d2d2d] active:bg-[#3d3d3d]' 
+                  : 'bg-white hover:bg-[#f5f5f5] active:bg-[#e8e8e8]'
+              }`}>
+                <Smile className={`w-[24px] h-[24px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`} strokeWidth={2.5} />
               </div>
             </button>
             
@@ -2224,8 +2269,12 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               <button 
                 className="p-0 bg-transparent border-none cursor-pointer"
               >
-                <div className="w-[50px] h-[50px] bg-white rounded-lg flex items-center justify-center hover:bg-[#f5f5f5] active:bg-[#e8e8e8] transition-colors">
-                  <ImageIcon className="w-[24px] h-[24px] text-[#333]" strokeWidth={2.5} />
+                <div className={`w-[50px] h-[50px] rounded-lg flex items-center justify-center transition-colors ${
+                  isDarkMode 
+                    ? 'bg-[#1e1e1e] hover:bg-[#2d2d2d] active:bg-[#3d3d3d]' 
+                    : 'bg-white hover:bg-[#f5f5f5] active:bg-[#e8e8e8]'
+                }`}>
+                  <ImageIcon className={`w-[24px] h-[24px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`} strokeWidth={2.5} />
                 </div>
               </button>
             </ImagePicker>
@@ -2238,8 +2287,12 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               }}
               className="p-0 bg-transparent border-none cursor-pointer"
             >
-              <div className="w-[50px] h-[50px] bg-white rounded-lg flex items-center justify-center hover:bg-[#f5f5f5] active:bg-[#e8e8e8] transition-colors">
-                <Camera className="w-[24px] h-[24px] text-[#333]" strokeWidth={2.5} />
+              <div className={`w-[50px] h-[50px] rounded-lg flex items-center justify-center transition-colors ${
+                isDarkMode 
+                  ? 'bg-[#1e1e1e] hover:bg-[#2d2d2d] active:bg-[#3d3d3d]' 
+                  : 'bg-white hover:bg-[#f5f5f5] active:bg-[#e8e8e8]'
+              }`}>
+                <Camera className={`w-[24px] h-[24px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`} strokeWidth={2.5} />
               </div>
             </button>
 
@@ -2251,9 +2304,13 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               }}
               className="p-0 bg-transparent border-none cursor-pointer"
             >
-              <div className="w-[50px] h-[50px] bg-white rounded-lg flex items-center justify-center hover:bg-[#f5f5f5] active:bg-[#e8e8e8] transition-colors">
+              <div className={`w-[50px] h-[50px] rounded-lg flex items-center justify-center transition-colors ${
+                isDarkMode 
+                  ? 'bg-[#1e1e1e] hover:bg-[#2d2d2d] active:bg-[#3d3d3d]' 
+                  : 'bg-white hover:bg-[#f5f5f5] active:bg-[#e8e8e8]'
+              }`}>
                 <svg 
-                  className="w-[22px] h-[22px] text-[#333]" 
+                  className={`w-[22px] h-[22px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`} 
                   viewBox="80 80 864 864" 
                   fill="currentColor"
                   xmlns="http://www.w3.org/2000/svg"
@@ -2278,11 +2335,17 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
       {/* 拍照描述弹窗 */}
       {showCameraDescModal && (
         <div className="fixed inset-0 bg-black/40 z-[1200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-[320px] shadow-xl">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4">
+          <div className={`rounded-2xl p-6 w-full max-w-[320px] shadow-xl ${
+            isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'
+          }`}>
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4 ${
+              isDarkMode ? 'text-white' : 'text-black'
+            }`}>
               拍照
             </h3>
-            <p className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#666] text-center mb-4">
+            <p className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-center mb-4 ${
+              isDarkMode ? 'text-[#aaa]' : 'text-[#666]'
+            }`}>
               请描述您想发送的图片内容
             </p>
             <input
@@ -2290,7 +2353,11 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
               value={cameraDescription}
               onChange={(e) => setCameraDescription(e.target.value)}
               placeholder="例如：一支玫瑰"
-              className="w-full px-4 py-3 rounded-xl bg-[#f5f5f5] border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#333] mb-6"
+              className={`w-full px-4 py-3 rounded-xl border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] mb-6 ${
+                isDarkMode 
+                  ? 'bg-[#2d2d2d] text-white placeholder:text-[#666]' 
+                  : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999]'
+              }`}
               autoFocus
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && cameraDescription.trim()) {
@@ -2304,7 +2371,11 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
                   setShowCameraDescModal(false);
                   setCameraDescription('');
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-[#f0f0f0] font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0] transition-colors disabled:opacity-50"
+                className={`flex-1 py-2.5 rounded-xl font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] transition-colors disabled:opacity-50 ${
+                  isDarkMode
+                    ? 'bg-[#2d2d2d] text-[#aaa] hover:bg-[#3d3d3d] active:bg-[#4d4d4d]'
+                    : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0]'
+                }`}
               >
                 取消
               </button>
@@ -2323,14 +2394,20 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
       {/* 红包弹窗 */}
       {showRedPacketModal && (
         <div className="fixed inset-0 bg-black/40 z-[1200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-[360px] shadow-xl">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4">
+          <div className={`rounded-2xl p-6 w-full max-w-[360px] shadow-xl ${
+            isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'
+          }`}>
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4 ${
+              isDarkMode ? 'text-white' : 'text-black'
+            }`}>
               发红包
             </h3>
             
             {/* 金额输入 */}
             <div className="mb-4">
-              <label className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#666] mb-2 block">
+              <label className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] mb-2 block ${
+                isDarkMode ? 'text-[#aaa]' : 'text-[#666]'
+              }`}>
                 红包金额
               </label>
               <div className="relative">
@@ -2346,10 +2423,16 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
                     }
                   }}
                   placeholder="0"
-                  className="w-full px-4 py-3 pr-16 rounded-xl bg-[#f5f5f5] border-none outline-none font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-[#333] placeholder:text-[#999]"
+                  className={`w-full px-4 py-3 pr-16 rounded-xl border-none outline-none font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] ${
+                    isDarkMode 
+                      ? 'bg-[#2d2d2d] text-white placeholder:text-[#666]' 
+                      : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999]'
+                  }`}
                   autoFocus
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#999]">
+                <span className={`absolute right-4 top-1/2 -translate-y-1/2 font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] ${
+                  isDarkMode ? 'text-[#aaa]' : 'text-[#999]'
+                }`}>
                   小判
                 </span>
               </div>
@@ -2357,7 +2440,9 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
             
             {/* 祝���语输入 */}
             <div className="mb-6">
-              <label className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#666] mb-2 block">
+              <label className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] mb-2 block ${
+                isDarkMode ? 'text-[#aaa]' : 'text-[#666]'
+              }`}>
                 红包祝福语（可选）
               </label>
               <input
@@ -2366,7 +2451,11 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
                 onChange={(e) => setRedPacketBlessing(e.target.value)}
                 placeholder="恭喜发财，大吉大利"
                 maxLength={20}
-                className="w-full px-4 py-3 rounded-xl bg-[#f5f5f5] border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#333] placeholder:text-[#999]"
+                className={`w-full px-4 py-3 rounded-xl border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] ${
+                  isDarkMode 
+                    ? 'bg-[#2d2d2d] text-white placeholder:text-[#666]' 
+                    : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999]'
+                }`}
               />
             </div>
             
@@ -2378,7 +2467,11 @@ export default function PrivateChat({ characterId, characterName, onClose }: Pri
                   setRedPacketAmount('');
                   setRedPacketBlessing('');
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-[#f0f0f0] font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0] transition-colors"
+                className={`flex-1 py-2.5 rounded-xl font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] transition-colors ${
+                  isDarkMode
+                    ? 'bg-[#2d2d2d] text-[#aaa] hover:bg-[#3d3d3d] active:bg-[#4d4d4d]'
+                    : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0]'
+                }`}
               >
                 取消
               </button>

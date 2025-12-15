@@ -252,7 +252,7 @@ export default function CharacterList({ onClose, onEditUser, onEditCharacter }: 
                        </span>
 
                        {/* Avatar Thumb */}
-                       <div className="w-10 h-10 bg-[#E5E5E5] border border-[#D6D3CC] flex-shrink-0 overflow-hidden grayscale transition-all group-active:grayscale-0 group-hover:grayscale-0">
+                       <div className="w-10 h-10 bg-[#E5E5E5] border border-[#D6D3CC] flex-shrink-0 overflow-hidden transition-all">
                           {char.avatarUrl ? (
                              <img src={char.avatarUrl} alt="" className="w-full h-full object-cover" />
                           ) : (

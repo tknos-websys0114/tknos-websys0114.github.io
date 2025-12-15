@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { saveImage, getImage } from "../utils/imageDB";
 import { db, STORES } from "../utils/db";
 
-export default function Desktop2({ preloadedImages }: { preloadedImages?: Record<string, string | null> }) {
+export default function Desktop2({ preloadedImages, onHealthClick }: { preloadedImages?: Record<string, string | null>, onHealthClick?: () => void }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [customText1, setCustomText1] = useState('自定义文字');
   const [customText2, setCustomText2] = useState('自定义文字自定义文字');
@@ -213,9 +213,14 @@ export default function Desktop2({ preloadedImages }: { preloadedImages?: Record
         </div>
       </div>
 
-      <div className="absolute contents left-[77.78%] top-[26.3%]" data-name="健康">
+      <div 
+        className="absolute contents left-[77.78%] top-[26.3%]" 
+        data-name="健康"
+        onClick={onHealthClick}
+        style={{ cursor: 'pointer' }}
+      >
         <p className={`absolute font-['Source_Han_Sans_CN_VF:Regular',sans-serif] font-normal h-[1.85%] leading-[normal] left-[calc(50%+35.51%)] text-[clamp(10px,3vw,12px)] text-center top-[33.94%] translate-x-[-50%] w-[13.04%] ${colorMode === 'dark' ? 'text-black' : 'text-white'}`}>健康</p>
-        <div className="absolute left-[77.78%] w-[14.98%] aspect-square top-[26.3%] overflow-hidden rounded-[18%]">
+        <div className="absolute left-[77.78%] w-[14.98%] aspect-square top-[26.3%] overflow-hidden rounded-[18%] transition-transform active:scale-95">
           <img alt="" className="block w-full h-full object-cover" src={iconImages['desktop2-health'] || img3} />
         </div>
       </div>

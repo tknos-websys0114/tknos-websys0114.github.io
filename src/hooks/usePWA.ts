@@ -30,6 +30,11 @@ export function usePWA() {
             });
           })
           .catch((registrationError) => {
+            // 忽略 MIME 类型不支持的错误（通常是因为开发环境未正确服务 sw.js）
+            if (registrationError.message && registrationError.message.includes('MIME type')) {
+              console.warn('Service Worker registration skipped: sw.js not served with correct MIME type (likely dev environment issue).');
+              return;
+            }
             console.log('SW registration failed: ', registrationError);
           });
 

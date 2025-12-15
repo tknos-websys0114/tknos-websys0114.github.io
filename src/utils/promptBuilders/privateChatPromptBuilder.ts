@@ -6,6 +6,7 @@
 
 import { db, STORES } from '../db';
 import solarlunar from 'solarlunar';
+import { getHealthStatus } from '../healthStatusUtils';
 
 export interface PrivateChatPromptOptions {
   characterId: string;
@@ -82,7 +83,10 @@ export async function buildPrivateChatPrompt(
     // 7. 获取表情包信息（如果启用）
     const stickerInfo = await getStickerInfo(chatSettings.enableStickers, chatSettings.stickerProbability);
     
-    // 8. 构建聊天历史并检查是否有未领取的用户红包
+    // 8. 获取健康状态
+    const healthStatus = await getHealthStatus(characterId);
+
+    // 9. 构建聊天历史并检查是否有未领取的用户红包
     const { chatHistory, hasUnclaimedUserRedPacket } = await buildChatHistory(
       allMessages,
       chatSettings.contextMessageCount,
@@ -92,7 +96,7 @@ export async function buildPrivateChatPrompt(
       chatSettings.timeAwareness
     );
     
-    // 9. 构建系统 prompt
+    // 10. 构建系统 prompt
     const systemPrompt = buildSystemPrompt({
       character,
       userData,
@@ -103,9 +107,10 @@ export async function buildPrivateChatPrompt(
       stickerInfo,
       chatSettings,
       hasUnclaimedUserRedPacket,
+      healthStatus,
     });
     
-    // 10. 构建用户 prompt
+    // 11. 构建用户 prompt
     const userPrompt = '请根据以上设定和聊天记录，生成角色的回复。';
     
     return {
@@ -577,10 +582,10 @@ async function buildChatHistory(
  * 构建系统 prompt
  */
 function buildSystemPrompt(params: any) {
-  const { character, userData, userNickname, worldBooks, timeInfo, chatHistory, stickerInfo, chatSettings, hasUnclaimedUserRedPacket } = params;
+  const { character, userData, userNickname, worldBooks, timeInfo, chatHistory, stickerInfo, chatSettings, hasUnclaimedUserRedPacket, healthStatus } = params;
   
   // 构建世界书内容
-  const beforeWorldBooksContent = worldBooks.before.map((wb: any, idx: number) => 
+  const beforeWorldBooksContent = worldBooks.before.map((wb: any, idx: number) =>  
     `- **世界书${idx + 1}（${wb.name}）:** ${wb.content}`
   ).join('\n');
   
@@ -628,6 +633,11 @@ function buildSystemPrompt(params: any) {
   const redPacketClaimGuidance = hasUnclaimedUserRedPacket 
     ? `\n\n**红包领取 (重要):**\n- 如果审神者发送了红包（消息内容为\"[红包]\"），你可以领取它\n- **注意：已领取的红包会显示为\"[红包-已领取]\"，请不要重复领取**\n- 领取红包时，必须发送一条特殊的系统消息，格式为: { \"sender\": \"system\", \"content\": \"领取红包\" }\n- 请务必严格遵守此格式，否则无法正确触发红包领取状态更新`
     : '';
+
+  // 构建健康状态信息
+  const healthStatusSection = healthStatus 
+    ? `\n  - **当前身体状态:** ${healthStatus}\n  - **应对规范:** 角色可根据其中信息，在对话中自然地表现关心、提醒或态度。- 不得完整复述健康数据- 不得持续围绕健康话题- 是否提及、如何提及，需符合角色性格设定- 提及应轻描淡写，不喧宾夺主`
+    : '';
   
   return `你现在要进行一个"私聊模拟"角色扮演
 
@@ -655,7 +665,7 @@ ${timeInfoText ? `- ${timeInfoText}` : ''}
   - **审神者名:** ${userData.name}
   - **属国:** ${userData.country}
   - **本丸名:** ${userData.fortress}
-  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.initialSword ? `\n  - **初始刀:** ${userData.initialSword}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}
+  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.initialSword ? `\n  - **初始刀:** ${userData.initialSword}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}${healthStatusSection}
 
 **你的任务与输出格式 (请严格遵守):**
 - **任务:**  

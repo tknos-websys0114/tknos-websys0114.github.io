@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, X, Upload, Settings } from 'lucide-react';
 import { getAllStickers, getStickerImageURL, addSticker, deleteSticker, Sticker, batchImportStickersFromURL } from '../utils/stickerManager';
+import { globalCache } from '../utils/chatCache';
 
 interface StickerPickerProps {
   onClose: () => void;
@@ -22,6 +23,34 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
   const [isBatchImporting, setIsBatchImporting] = useState(false);
   const [batchImportResult, setBatchImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
   const [isManageMode, setIsManageMode] = useState(false); // 管理模式
+  const [isDarkMode, setIsDarkMode] = useState(() => globalCache.chatSettings?.darkMode || false);
+
+  useEffect(() => {
+    const updateTheme = () => {
+      setIsDarkMode(globalCache.chatSettings?.darkMode || false);
+    };
+    window.addEventListener('chat-settings-updated', updateTheme);
+    
+    // 初始化时如果缓存为空，尝试从 DB 加载
+    const loadGlobalSettings = async () => {
+      if (!globalCache.chatSettings) {
+        try {
+          const settings = await db.get<any>(STORES.CHATS, 'chat_settings');
+          if (settings) {
+            globalCache.chatSettings = settings;
+            if (settings.darkMode !== undefined) {
+              setIsDarkMode(settings.darkMode);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load global chat settings in StickerPicker', e);
+        }
+      }
+    };
+    loadGlobalSettings();
+
+    return () => window.removeEventListener('chat-settings-updated', updateTheme);
+  }, []);
   
   useEffect(() => {
     loadStickers();
@@ -161,12 +190,16 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
         onClick={onClose}
       >
         <div
-          className="absolute bottom-[70px] right-3 w-[320px] h-[300px] bg-white rounded-xl shadow-lg flex flex-col animate-in slide-in-from-bottom-2 fade-in duration-200"
+          className={`absolute bottom-[70px] right-3 w-[320px] h-[300px] rounded-xl shadow-lg flex flex-col animate-in slide-in-from-bottom-2 fade-in duration-200 ${
+            isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* 顶部工具栏 */}
           <div className="flex items-center justify-between px-4 py-3">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-[#333]">
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] ${
+              isDarkMode ? 'text-white' : 'text-[#333]'
+            }`}>
               {isManageMode ? '管理表情包' : '选择表情'}
             </h3>
             <button
@@ -174,7 +207,9 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
               className={`px-3 py-1.5 rounded-lg transition-colors ${
                 isManageMode
                   ? 'bg-[#88A588] text-white'
-                  : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8]'
+                  : isDarkMode
+                    ? 'bg-[#2d2d2d] text-[#aaa] hover:bg-[#3d3d3d]'
+                    : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8]'
               }`}
             >
               <span className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[13px]">
@@ -192,17 +227,25 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
                   {/* 添加按钮 */}
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-20 h-20 bg-[#e8e8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#d8d8d8] active:bg-[#c8c8c8] transition-colors"
+                    className={`w-20 h-20 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
+                      isDarkMode 
+                        ? 'bg-[#2d2d2d] hover:bg-[#3d3d3d] active:bg-[#4d4d4d]' 
+                        : 'bg-[#e8e8e8] hover:bg-[#d8d8d8] active:bg-[#c8c8c8]'
+                    }`}
                   >
-                    <Plus className="w-8 h-8 text-[#999]" strokeWidth={2} />
+                    <Plus className={`w-8 h-8 ${isDarkMode ? 'text-[#aaa]' : 'text-[#999]'}`} strokeWidth={2} />
                   </button>
 
                   {/* 批量导入按钮 */}
                   <button
                     onClick={() => setShowBatchImportModal(true)}
-                    className="w-20 h-20 bg-[#e8e8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#d8d8d8] active:bg-[#c8c8c8] transition-colors"
+                    className={`w-20 h-20 rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
+                      isDarkMode 
+                        ? 'bg-[#2d2d2d] hover:bg-[#3d3d3d] active:bg-[#4d4d4d]' 
+                        : 'bg-[#e8e8e8] hover:bg-[#d8d8d8] active:bg-[#c8c8c8]'
+                    }`}
                   >
-                    <Upload className="w-8 h-8 text-[#999]" strokeWidth={2} />
+                    <Upload className={`w-8 h-8 ${isDarkMode ? 'text-[#aaa]' : 'text-[#999]'}`} strokeWidth={2} />
                   </button>
                 </>
               )}
@@ -215,10 +258,14 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
                 >
                   <button
                     onClick={() => !isManageMode && handleStickerClick(sticker.id)}
-                    className={`w-full h-full bg-[#f9f9f9] rounded-lg p-1 transition-colors ${
+                    className={`w-full h-full rounded-lg p-1 transition-colors ${
                       isManageMode 
                         ? 'cursor-default' 
-                        : 'cursor-pointer hover:bg-[#f0f0f0] active:bg-[#e8e8e8]'
+                        : isDarkMode
+                          ? 'cursor-pointer hover:bg-[#2d2d2d] active:bg-[#3d3d3d]'
+                          : 'cursor-pointer hover:bg-[#f0f0f0] active:bg-[#e8e8e8]'
+                    } ${
+                      isDarkMode ? 'bg-[#2d2d2d]' : 'bg-[#f9f9f9]'
                     }`}
                   >
                     {stickerUrls[sticker.id] && (
@@ -260,8 +307,12 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
       {/* 上传弹窗 */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black/40 z-[1200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-[320px] shadow-xl">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4">
+          <div className={`rounded-2xl p-6 w-full max-w-[320px] shadow-xl ${
+            isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'
+          }`}>
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4 ${
+              isDarkMode ? 'text-white' : 'text-black'
+            }`}>
               上传表情
             </h3>
 
@@ -270,7 +321,9 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
               <img
                 src={uploadPreview}
                 alt="preview"
-                className="w-[100px] h-[100px] object-cover rounded-lg mx-auto mb-4 bg-[#f0f0f0]"
+                className={`w-[100px] h-[100px] object-cover rounded-lg mx-auto mb-4 ${
+                  isDarkMode ? 'bg-[#2d2d2d]' : 'bg-[#f0f0f0]'
+                }`}
               />
             )}
 
@@ -280,7 +333,11 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
               value={meaning}
               onChange={(e) => setMeaning(e.target.value)}
               placeholder="为AI添加表情的解释(必填,如:开心)"
-              className="w-full px-4 py-3 rounded-xl bg-[#f5f5f5] border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#333] mb-6"
+              className={`w-full px-4 py-3 rounded-xl border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] mb-6 ${
+                isDarkMode 
+                  ? 'bg-[#2d2d2d] text-white placeholder:text-[#666]' 
+                  : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999]'
+              }`}
             />
 
             {/* 按钮组 */}
@@ -288,7 +345,11 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
               <button
                 onClick={handleCancelUpload}
                 disabled={isUploading}
-                className="flex-1 py-2.5 rounded-xl bg-[#f0f0f0] font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0] transition-colors disabled:opacity-50"
+                className={`flex-1 py-2.5 rounded-xl font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] transition-colors disabled:opacity-50 ${
+                  isDarkMode
+                    ? 'bg-[#2d2d2d] text-[#aaa] hover:bg-[#3d3d3d] active:bg-[#4d4d4d]'
+                    : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0]'
+                }`}
               >
                 取消
               </button>
@@ -307,17 +368,27 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
       {/* 批量导入弹窗 */}
       {showBatchImportModal && (
         <div className="fixed inset-0 bg-black/40 z-[1200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-[400px] shadow-xl max-h-[80vh] overflow-y-auto">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-3">
+          <div className={`rounded-2xl p-6 w-full max-w-[400px] shadow-xl max-h-[80vh] overflow-y-auto ${
+            isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'
+          }`}>
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-3 ${
+              isDarkMode ? 'text-white' : 'text-black'
+            }`}>
               批量导入图床表情
             </h3>
 
             {/* 格式说明 */}
-            <div className="bg-[#f5f5f5] rounded-xl p-3 mb-4">
-              <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[13px] text-[#666] mb-2">
+            <div className={`rounded-xl p-3 mb-4 ${
+              isDarkMode ? 'bg-[#2d2d2d]' : 'bg-[#f5f5f5]'
+            }`}>
+              <p className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[13px] mb-2 ${
+                isDarkMode ? 'text-[#aaa]' : 'text-[#666]'
+              }`}>
                 格式说明：
               </p>
-              <p className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[12px] text-[#999] leading-relaxed">
+              <p className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[12px] leading-relaxed ${
+                isDarkMode ? 'text-[#888]' : 'text-[#999]'
+              }`}>
                 每行一个表情包，格式为：<br />
                 <span className="text-[#88A588]">含义-图床URL</span><br />
                 <br />
@@ -333,12 +404,18 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
               value={batchImportText}
               onChange={(e) => setBatchImportText(e.target.value)}
               placeholder="开心-https://example.com/happy.jpg&#10;难过-https://example.com/sad.png"
-              className="w-full px-4 py-3 rounded-xl bg-[#f5f5f5] border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#333] mb-4 h-[150px] resize-y"
+              className={`w-full px-4 py-3 rounded-xl border-none outline-none font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] mb-4 h-[150px] resize-y ${
+                isDarkMode 
+                  ? 'bg-[#2d2d2d] text-white placeholder:text-[#666]' 
+                  : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999]'
+              }`}
             />
 
             {/* 导入结果 */}
             {batchImportResult && (
-              <div className="bg-[#f9f9f9] rounded-xl p-4 mb-4">
+              <div className={`rounded-xl p-4 mb-4 ${
+                isDarkMode ? 'bg-[#2d2d2d]' : 'bg-[#f9f9f9]'
+              }`}>
                 <div className="flex gap-4 mb-2">
                   <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#88A588]">
                     成功: {batchImportResult.success}
@@ -349,7 +426,9 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
                 </div>
                 {batchImportResult.errors.length > 0 && (
                   <div className="max-h-[120px] overflow-y-auto">
-                    <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[13px] text-[#666] mb-1">
+                    <p className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[13px] mb-1 ${
+                      isDarkMode ? 'text-[#aaa]' : 'text-[#666]'
+                    }`}>
                       错误详情：
                     </p>
                     <ul className="space-y-1">
@@ -359,7 +438,9 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
                         </li>
                       ))}
                       {batchImportResult.errors.length > 5 && (
-                        <li className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[12px] text-[#999]">
+                        <li className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[12px] ${
+                          isDarkMode ? 'text-[#888]' : 'text-[#999]'
+                        }`}>
                           ... 还有 {batchImportResult.errors.length - 5} 个错误
                         </li>
                       )}
@@ -374,7 +455,11 @@ export default function StickerPicker({ onClose, onSelect }: StickerPickerProps)
               <button
                 onClick={handleCancelBatchImport}
                 disabled={isBatchImporting}
-                className="flex-1 py-2.5 rounded-xl bg-[#f0f0f0] font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0] transition-colors disabled:opacity-50"
+                className={`flex-1 py-2.5 rounded-xl font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] transition-colors disabled:opacity-50 ${
+                  isDarkMode
+                    ? 'bg-[#2d2d2d] text-[#aaa] hover:bg-[#3d3d3d] active:bg-[#4d4d4d]'
+                    : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0]'
+                }`}
               >
                 取消
               </button>

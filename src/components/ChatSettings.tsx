@@ -77,6 +77,26 @@ export default function ChatSettings() {
   const [presetName, setPresetName] = useState('');
   const [showWorldBookSelector, setShowWorldBookSelector] = useState(false);
   const [tempWorldBooksSelection, setTempWorldBooksSelection] = useState<string[]>([]);
+  const [isDarkMode, setIsDarkMode] = useState(() => globalCache.chatSettings?.darkMode || false);
+
+  // 监听深色模式变化并更新全局缓存
+  useEffect(() => {
+    if (globalCache.chatSettings) {
+      globalCache.chatSettings.darkMode = isDarkMode;
+      window.dispatchEvent(new Event('chat-settings-updated'));
+    }
+    // 同时也尝试保存到数据库，以便持久化
+    const saveDarkMode = async () => {
+      try {
+        const currentSettings = await db.get<any>(STORES.CHATS, 'chat_settings') || {};
+        currentSettings.darkMode = isDarkMode;
+        await db.set(STORES.CHATS, 'chat_settings', currentSettings);
+      } catch (e) {
+        console.error('Failed to save dark mode preference', e);
+      }
+    };
+    saveDarkMode();
+  }, [isDarkMode]);
 
   // 气泡预设数据类型
   interface BubblePreset {
@@ -233,39 +253,27 @@ export default function ChatSettings() {
     }
   };
 
-  const handleSaveSettings = async () => {
+  // 实时保存设置到数据库和缓存
+  const saveSettingInstantly = async (newSettings: ChatSettingsData) => {
     try {
-      // 如果有临时头像，复制到正式key
-      if (tempSettings.userAvatar === 'chat-avatar-temp') {
-        await copyImage('chat-avatar-temp', 'chat-avatar');
-        tempSettings.userAvatar = 'chat-avatar';
-        // 删除临时图片
-        await deleteImage('chat-avatar-temp');
-      }
-      
-      // 如果有临时背景，复制到正式key
-      if (tempSettings.chatBackground === 'chat-background-temp') {
-        await copyImage('chat-background-temp', 'chat-background');
-        tempSettings.chatBackground = 'chat-background';
-        // 删除临时图片
-        await deleteImage('chat-background-temp');
-      }
-      
-      setSettings(tempSettings);
-      await db.set(STORES.CHATS, 'chat_settings', tempSettings);
-      
-      // 更新缓存
-      globalCache.chatSettings = tempSettings;
-      
-      // 触发缓存清除事件
+      setTempSettings(newSettings);
+      setSettings(newSettings);
+      await db.set(STORES.CHATS, 'chat_settings', newSettings);
+      globalCache.chatSettings = newSettings;
       window.dispatchEvent(new Event('chat-settings-updated'));
-      
-      // 显示保存成功提示
-      setShowSuccessAlert(true);
-      setTimeout(() => setShowSuccessAlert(false), 2000);
     } catch (error) {
-      console.error('Failed to save chat settings:', error);
+      console.error('Failed to save settings instantly:', error);
     }
+  };
+
+  const handleNicknameChange = (value: string) => {
+    const newSettings = { ...tempSettings, userNickname: value };
+    saveSettingInstantly(newSettings);
+  };
+
+  const handleContextCountChange = (value: number) => {
+    const newSettings = { ...tempSettings, contextMessageCount: value };
+    saveSettingInstantly(newSettings);
   };
 
   const handleAvatarClick = () => {
@@ -277,11 +285,16 @@ export default function ChatSettings() {
       if (file) {
         setIsUploading(true);
         try {
-          // 保存到临时key
-          const url = await saveImage('chat-avatar-temp', file);
-          setTempSettings({ ...tempSettings, userAvatar: 'chat-avatar-temp' });
-          // 立即更新预览图
+          const url = await saveImage('chat-avatar', file);
+          const newSettings = { ...tempSettings, userAvatar: 'chat-avatar' };
+          
+          // 如果有临时头像，删除它
+          if (tempSettings.userAvatar === 'chat-avatar-temp') {
+            await deleteImage('chat-avatar-temp');
+          }
+          
           setAvatarUrl(url);
+          saveSettingInstantly(newSettings);
         } catch (error) {
           console.error('图片压缩失败:', error);
         } finally {
@@ -290,14 +303,6 @@ export default function ChatSettings() {
       }
     };
     input.click();
-  };
-
-  const handleNicknameChange = (value: string) => {
-    setTempSettings({ ...tempSettings, userNickname: value });
-  };
-
-  const handleContextCountChange = (value: number) => {
-    setTempSettings({ ...tempSettings, contextMessageCount: value });
   };
 
   const handleBackgroundClick = () => {
@@ -309,11 +314,16 @@ export default function ChatSettings() {
       if (file) {
         setIsUploading(true);
         try {
-          // 保存到临时key
-          const url = await saveImage('chat-background-temp', file);
-          setTempSettings({ ...tempSettings, chatBackground: 'chat-background-temp' });
-          // 立即更新预览图
+          const url = await saveImage('chat-background', file);
+          const newSettings = { ...tempSettings, chatBackground: 'chat-background' };
+          
+          // 如果有临时背景，删除它
+          if (tempSettings.chatBackground === 'chat-background-temp') {
+            await deleteImage('chat-background-temp');
+          }
+          
           setBackgroundUrl(url);
+          saveSettingInstantly(newSettings);
         } catch (error) {
           console.error('图片处理失败:', error);
         } finally {
@@ -324,11 +334,29 @@ export default function ChatSettings() {
     input.click();
   };
 
+  const handleClearBackground = () => {
+    const newSettings = { ...tempSettings, chatBackground: null };
+    setBackgroundUrl(null);
+    saveSettingInstantly(newSettings);
+  };
+
+  // 应用气泡样式（只有这个需要手动保存）
+  const handleApplyBubbleStyles = async () => {
+    try {
+      await saveSettingInstantly(tempSettings);
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 2000);
+    } catch (error) {
+      console.error('Failed to apply bubble styles:', error);
+    }
+  };
+
   const handleWorldBookToggle = (id: string) => {
     const newEnabledWorldBooks = tempSettings.enabledWorldBooks.includes(id)
       ? tempSettings.enabledWorldBooks.filter(bookId => bookId !== id)
       : [...tempSettings.enabledWorldBooks, id];
-    setTempSettings({ ...tempSettings, enabledWorldBooks: newEnabledWorldBooks });
+    const newSettings = { ...tempSettings, enabledWorldBooks: newEnabledWorldBooks };
+    saveSettingInstantly(newSettings);
   };
 
   // 打开世界书选择器
@@ -345,20 +373,23 @@ export default function ChatSettings() {
       setTempWorldBooksSelection([...tempWorldBooksSelection, id]);
     }
   };
-
+  
   // 保存世界书选择
   const handleSaveWorldBookSelection = () => {
-    setTempSettings({ ...tempSettings, enabledWorldBooks: [...tempWorldBooksSelection] });
+    const newSettings = { ...tempSettings, enabledWorldBooks: [...tempWorldBooksSelection] };
+    saveSettingInstantly(newSettings);
     setShowWorldBookSelector(false);
   };
 
   // 删除世界书（直接删除）
   const handleRemoveWorldBook = (id: string) => {
-    setTempSettings({ 
+    const newSettings = { 
       ...tempSettings, 
       enabledWorldBooks: tempSettings.enabledWorldBooks.filter(bookId => bookId !== id) 
-    });
+    };
+    saveSettingInstantly(newSettings);
   };
+
 
   // 将CSS字符串解析为React style对象
   const parseCSSToStyle = (cssString: string): React.CSSProperties => {
@@ -421,13 +452,13 @@ export default function ChatSettings() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white flex flex-col">
+    <div className={`flex-1 overflow-y-auto flex flex-col ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
       <div className="flex-1 px-5 py-6">
         {/* 用户头像 */}
         <div className="mb-8 flex flex-col items-center">
           <button
             onClick={handleAvatarClick}
-            className="w-24 h-24 rounded-full bg-[#f5f5f5] flex items-center justify-center overflow-hidden active:opacity-70 hover:opacity-70 transition-opacity"
+            className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden active:opacity-70 hover:opacity-70 transition-opacity ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}
           >
             {avatarUrl ? (
               <img 
@@ -439,14 +470,14 @@ export default function ChatSettings() {
               <Camera className="w-8 h-8 text-[#999]" strokeWidth={2} />
             )}
           </button>
-          <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[13px] text-[#999] mt-2">
+          <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[13px] mt-2 ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
             点击更换头像
           </p>
         </div>
 
         {/* 用户昵称 */}
         <div className="mb-8">
-          <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333] mb-3">
+          <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] mb-3 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
             昵称
           </h3>
           <input
@@ -454,14 +485,18 @@ export default function ChatSettings() {
             value={tempSettings.userNickname}
             onChange={(e) => handleNicknameChange(e.target.value)}
             placeholder="请输入昵称"
-            className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] placeholder:text-[#999] outline-none focus:bg-[#ebebeb] transition-colors"
+            className={`w-full px-4 py-3 rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] outline-none transition-colors ${
+              isDarkMode 
+                ? 'bg-[#1e1e1e] text-white placeholder:text-[#888] focus:bg-[#2d2d2d]' 
+                : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999] focus:bg-[#ebebeb]'
+            }`}
           />
         </div>
 
         {/* AI上下文消息条数 */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333]">
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
               AI上下文消息条数
             </h3>
             <span className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#7B9E7B]">
@@ -476,23 +511,23 @@ export default function ChatSettings() {
               max="1000"
               value={tempSettings.contextMessageCount}
               onChange={(e) => handleContextCountChange(parseInt(e.target.value))}
-              className="w-full h-2 bg-[#f5f5f5] rounded-lg appearance-none cursor-pointer slider"
+              className={`w-full h-2 rounded-lg appearance-none cursor-pointer slider ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}
               style={{
-                background: `linear-gradient(to right, #7B9E7B 0%, #7B9E7B ${(tempSettings.contextMessageCount - 1) / 999 * 100}%, #f5f5f5 ${(tempSettings.contextMessageCount - 1) / 999 * 100}%, #f5f5f5 100%)`,
+                background: `linear-gradient(to right, #7B9E7B 0%, #7B9E7B ${(tempSettings.contextMessageCount - 1) / 999 * 100}%, ${isDarkMode ? '#1e1e1e' : '#f5f5f5'} ${(tempSettings.contextMessageCount - 1) / 999 * 100}%, ${isDarkMode ? '#1e1e1e' : '#f5f5f5'} 100%)`,
               }}
             />
           </div>
           
           <div className="flex justify-between mt-2 px-1">
-            <span className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] text-[#999]">
+            <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
               1
             </span>
-            <span className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] text-[#999]">
+            <span className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[12px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
               1000
             </span>
           </div>
           
-          <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[13px] text-[#999] mt-3">
+          <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[13px] mt-3 ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
             设置发送给AI的历史消息条数，数值越大AI对话越连贯，但消耗也越大
           </p>
         </div>
@@ -501,15 +536,18 @@ export default function ChatSettings() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333] mb-1">
+              <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] mb-1 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 感知时间
               </h3>
-              <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[13px] text-[#999]">
+              <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[13px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                 开启后角色可以根据当前时段调整对话内容
               </p>
             </div>
             <button
-              onClick={() => setTempSettings({ ...tempSettings, timeAwareness: !tempSettings.timeAwareness })}
+              onClick={() => {
+                const newSettings = { ...tempSettings, timeAwareness: !tempSettings.timeAwareness };
+                saveSettingInstantly(newSettings);
+              }}
               className={`w-12 h-7 rounded-full transition-colors flex items-center px-0.5 hover:opacity-80 active:opacity-80 ${
                 tempSettings.timeAwareness ? 'bg-[#7B9E7B]' : 'bg-[#d0d0d0]'
               }`}
@@ -526,7 +564,7 @@ export default function ChatSettings() {
         {/* 世界书 */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333]">
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
               世界书
             </h3>
             {localWorldBooks.length > 0 && (
@@ -539,11 +577,11 @@ export default function ChatSettings() {
             )}
           </div>
           {localWorldBooks.length === 0 ? (
-            <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999]">
+            <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
               暂无局部世界书
             </p>
           ) : tempSettings.enabledWorldBooks.length === 0 ? (
-            <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999]">
+            <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
               暂未启用世界书
             </p>
           ) : (
@@ -551,8 +589,8 @@ export default function ChatSettings() {
               {tempSettings.enabledWorldBooks.map(id => {
                 const book = localWorldBooks.find(b => b.id === id);
                 return book ? (
-                  <div key={id} className="bg-[#f5f5f5] rounded-lg px-4 py-3 flex items-center justify-between">
-                    <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333]">
+                  <div key={id} className={`rounded-lg px-4 py-3 flex items-center justify-between ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-[#f5f5f5]'}`}>
+                    <span className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                       {book.name}
                     </span>
                     <button
@@ -573,15 +611,17 @@ export default function ChatSettings() {
           {/* 折叠头部 */}
           <button
             onClick={() => setIsBeautifyExpanded(!isBeautifyExpanded)}
-            className="w-full flex items-center justify-between p-4 bg-[#f5f5f5] rounded-lg active:bg-[#ebebeb] hover:bg-[#ebebeb] transition-colors"
+            className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${
+              isDarkMode 
+                ? 'bg-[#1e1e1e] active:bg-[#2d2d2d] hover:bg-[#2d2d2d]' 
+                : 'bg-[#f5f5f5] active:bg-[#ebebeb] hover:bg-[#ebebeb]'
+            }`}
           >
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] text-[#333]">
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[15px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
               美化设置
             </h3>
             <ChevronDown 
-              className={`w-5 h-5 text-[#666] transition-transform ${
-                isBeautifyExpanded ? 'rotate-180' : ''
-              }`}
+              className={`w-5 h-5 transition-transform ${isBeautifyExpanded ? 'rotate-180' : ''} ${isDarkMode ? 'text-[#a0a0a0]' : 'text-[#666]'}`}
               strokeWidth={2}
             />
           </button>
@@ -593,18 +633,56 @@ export default function ChatSettings() {
             }`}
           >
             <div className="flex flex-col gap-6">
+              {/* 深色模式开关 */}
+              <div className="flex items-center justify-between">
+                <h4 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
+                  深色模式
+                </h4>
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className={`w-12 h-7 rounded-full transition-colors flex items-center px-0.5 hover:opacity-80 active:opacity-80 ${
+                    isDarkMode ? 'bg-[#7B9E7B]' : 'bg-[#d0d0d0]'
+                  }`}
+                >
+                  <div 
+                    className={`w-6 h-6 bg-white rounded-full transition-transform ${
+                      isDarkMode ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {/* 聊天背景 */}
               <div>
-                <h4 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#333] mb-3">
+                <h4 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] mb-3 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                   聊天背景
                 </h4>
                 <button
                   onClick={handleBackgroundClick}
-                  className="w-full px-4 py-3 bg-[#f5f5f5] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] active:bg-[#ebebeb] hover:bg-[#ebebeb] transition-colors flex items-center justify-center gap-2"
+                  className={`w-full px-4 py-3 rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] transition-colors flex items-center justify-center gap-2 ${
+                    isDarkMode 
+                      ? 'bg-[#1e1e1e] text-white active:bg-[#2d2d2d] hover:bg-[#2d2d2d]' 
+                      : 'bg-[#f5f5f5] text-[#333] active:bg-[#ebebeb] hover:bg-[#ebebeb]'
+                  }`}
                 >
-                  <Image className="w-5 h-5 text-[#666]" strokeWidth={2} />
+                  <Image className={`w-5 h-5 ${isDarkMode ? 'text-[#a0a0a0]' : 'text-[#666]'}`} strokeWidth={2} />
                   <span>{tempSettings.chatBackground ? '更换聊天背景' : '设置聊天背景'}</span>
                 </button>
+                
+                {tempSettings.chatBackground && (
+                  <button
+                    onClick={handleClearBackground}
+                    className={`mt-2 w-full px-4 py-2.5 rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] transition-colors flex items-center justify-center gap-2 ${
+                      isDarkMode 
+                        ? 'bg-[#2a1a1a] text-[#ff6b6b] active:bg-[#3a2a2a] hover:bg-[#3a2a2a]' 
+                        : 'bg-[#fff0f0] text-[#ff4d4f] active:bg-[#ffe5e5] hover:bg-[#ffe5e5]'
+                    }`}
+                  >
+                    <Trash2 className="w-4 h-4" strokeWidth={2} />
+                    <span>恢复默认背景</span>
+                  </button>
+                )}
+
                 {backgroundUrl && (
                   <div className="mt-3 rounded-lg overflow-hidden">
                     <img 
@@ -618,12 +696,12 @@ export default function ChatSettings() {
 
               {/* 气泡样式 - 统一编辑器 */}
               <div>
-                <h4 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#333] mb-3">
+                <h4 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] mb-3 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                   气泡样式（CSS）
                 </h4>
                 
                 {/* 预设管理 */}
-                <div className="mb-4 p-3 bg-[#fafafa] rounded-lg">
+                <div className={`mb-4 p-3 rounded-lg ${isDarkMode ? 'bg-[#181818]' : 'bg-[#fafafa]'}`}>
                   {/* 保存新预设 */}
                   <div className="flex items-center gap-2 mb-3">
                     <input
@@ -631,7 +709,11 @@ export default function ChatSettings() {
                       value={presetName}
                       onChange={(e) => setPresetName(e.target.value)}
                       placeholder="输入预设名称"
-                      className="flex-1 px-3 py-2 bg-white border border-[#e0e0e0] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[13px] text-[#333] placeholder:text-[#999] outline-none focus:border-[#7B9E7B] transition-colors"
+                      className={`flex-1 px-3 py-2 border rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[13px] outline-none transition-colors ${
+                        isDarkMode 
+                          ? 'bg-[#1e1e1e] border-[#333] text-white placeholder:text-[#888] focus:border-[#7B9E7B]' 
+                          : 'bg-white border-[#e0e0e0] text-[#333] placeholder:text-[#999] focus:border-[#7B9E7B]'
+                      }`}
                     />
                     <button
                       onClick={handleSavePreset}
@@ -650,9 +732,13 @@ export default function ChatSettings() {
                       {bubblePresets.map(preset => (
                         <div 
                           key={preset.id} 
-                          className="flex items-center justify-between p-2 bg-white rounded-lg border border-[#e0e0e0]"
+                          className={`flex items-center justify-between p-2 rounded-lg border ${
+                            isDarkMode 
+                              ? 'bg-[#1e1e1e] border-[#333]' 
+                              : 'bg-white border-[#e0e0e0]'
+                          }`}
                         >
-                          <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[13px] text-[#333] flex-1">
+                          <span className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[13px] flex-1 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                             {preset.name}
                           </span>
                           <div className="flex items-center gap-1.5">
@@ -664,7 +750,11 @@ export default function ChatSettings() {
                             </button>
                             <button
                               onClick={() => handleDeletePreset(preset.id)}
-                              className="p-1.5 bg-[#f0f0f0] rounded text-[#666] active:bg-[#e0e0e0] hover:bg-[#e0e0e0] transition-colors"
+                              className={`p-1.5 rounded transition-colors ${
+                                isDarkMode 
+                                  ? 'bg-[#2d2d2d] text-[#a0a0a0] active:bg-[#3d3d3d] hover:bg-[#3d3d3d]' 
+                                  : 'bg-[#f0f0f0] text-[#666] active:bg-[#e0e0e0] hover:bg-[#e0e0e0]'
+                              }`}
                             >
                               <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                             </button>
@@ -686,36 +776,20 @@ export default function ChatSettings() {
                     });
                   }}
                   placeholder="编辑CSS样式..."
-                  className="w-full px-3 py-2 bg-[#f5f5f5] rounded-lg font-mono text-[11px] text-[#333] placeholder:text-[#999] outline-none focus:bg-[#ebebeb] transition-colors resize-y min-h-[300px]"
+                  className={`w-full px-3 py-2 rounded-lg font-mono text-[11px] outline-none transition-colors resize-y min-h-[300px] ${
+                    isDarkMode 
+                      ? 'bg-[#1e1e1e] text-white placeholder:text-[#888] focus:bg-[#2d2d2d]' 
+                      : 'bg-[#f5f5f5] text-[#333] placeholder:text-[#999] focus:bg-[#ebebeb]'
+                  }`}
                   style={{ whiteSpace: 'pre', overflowWrap: 'normal', overflowX: 'auto' }}
                 />
                 
-                <div className="mt-2 p-3 bg-[#fafafa] rounded-lg space-y-1.5">
-                  <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[12px] text-[#666]">
-                    编辑说明
-                  </p>
-                  <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] text-[#888]">
-                    分别编辑四个选择器：.user-bubble、.user-quote、.character-bubble、.character-quote
-                  </p>
-                  <div className="border-l-2 border-[#ACBCA6] pl-2 space-y-1">
-                    <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] text-[#888]">
-                      💡 <span className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif]">引用块位置控制：</span>quote 嵌套在 bubble 内部
-                    </p>
-                    <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] text-[#888]">
-                      • <code className="bg-white px-1 rounded text-[#ACBCA6]">margin-bottom</code> - 控制引用块与正文的间距
-                    </p>
-                    <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] text-[#888]">
-                      • <code className="bg-white px-1 rounded text-[#ACBCA6]">margin-top</code> - 控制引用块上方间距
-                    </p>
-                    <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[11px] text-[#888]">
-                      • <code className="bg-white px-1 rounded text-[#ACBCA6]">padding</code> - 控制引用块内部文字的留白
-                    </p>
-                  </div>
-                </div>
-                
                 {/* 综合对话预览 */}
-                <div className="mt-4 p-3 bg-[#fafafa] rounded-lg">
-                  <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[12px] text-[#999] mb-3">
+                <div 
+                  className={`mt-4 p-3 rounded-lg bg-cover bg-center ${!backgroundUrl && (isDarkMode ? 'bg-[#181818]' : 'bg-[#fafafa]')}`}
+                  style={backgroundUrl ? { backgroundImage: `url(${backgroundUrl})` } : {}}
+                >
+                  <p className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[12px] mb-3 drop-shadow-md ${isDarkMode || backgroundUrl ? 'text-[#e0e0e0]' : 'text-[#999]'}`}>
                     预览效果
                   </p>
                   
@@ -754,13 +828,25 @@ export default function ChatSettings() {
                   </div>
                 </div>
 
+                {/* 应用气泡样式按钮 */}
+                <button
+                  onClick={handleApplyBubbleStyles}
+                  className="mt-4 w-full py-3 bg-[#7B9E7B] rounded-lg font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-white active:opacity-80 hover:opacity-80 transition-opacity flex items-center justify-center"
+                >
+                  应用气泡样式
+                </button>
+
                 {/* 恢复默认按钮 */}
                 <button
                   onClick={() => setTempSettings({
                     ...tempSettings,
                     bubbleStyles: defaultBubbleStyles,
                   })}
-                  className="mt-4 w-full px-4 py-2 bg-white border border-[#d0d0d0] rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] text-[#666] active:bg-[#f5f5f5] hover:bg-[#f5f5f5] transition-colors"
+                  className={`mt-4 w-full px-4 py-2 border rounded-lg font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[14px] transition-colors ${
+                    isDarkMode 
+                      ? 'bg-[#1e1e1e] border-[#333] text-[#a0a0a0] active:bg-[#2d2d2d] hover:bg-[#2d2d2d]' 
+                      : 'bg-white border-[#d0d0d0] text-[#666] active:bg-[#f5f5f5] hover:bg-[#f5f5f5]'
+                  }`}
                 >
                   恢复默认样式
                 </button>
@@ -770,27 +856,19 @@ export default function ChatSettings() {
         </div>
       </div>
 
-      {/* 底部保存按钮 */}
-      <div className="px-5 py-4 bg-white border-t border-[#f0f0f0]">
-        <button
-          onClick={handleSaveSettings}
-          className="w-full py-3 bg-[#7B9E7B] rounded-lg font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-white active:opacity-80 hover:opacity-80 transition-opacity flex items-center justify-center"
-        >
-          保存设置
-        </button>
-      </div>
+      {/* 底部保存按钮 - 已移除 */}
 
       {/* 保存成功弹窗 */}
       {showSuccessAlert && (
         <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-64 px-6 py-5 shadow-2xl">
+          <div className={`rounded-xl w-64 px-6 py-5 shadow-2xl ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-[#7B9E7B] flex items-center justify-center mb-3">
                 <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-[#333]">
+              <p className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 保存成功
               </p>
             </div>
@@ -801,12 +879,12 @@ export default function ChatSettings() {
       {/* 图片处理中提示 */}
       {isUploading && (
         <div className="fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-64 px-6 py-5 shadow-2xl">
+          <div className={`rounded-xl w-64 px-6 py-5 shadow-2xl ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-[#7B9E7B] flex items-center justify-center mb-3">
                 <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <p className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] text-[#333]">
+              <p className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[16px] ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                 处理中...
               </p>
             </div>
@@ -817,14 +895,14 @@ export default function ChatSettings() {
       {/* 世界书选择器 */}
       {showWorldBookSelector && (
         <div className="fixed inset-0 bg-black/40 z-[1200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-[360px] shadow-xl max-h-[70vh] overflow-y-auto">
-            <h3 className="font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4">
+          <div className={`rounded-2xl p-6 w-full max-w-[360px] shadow-xl max-h-[70vh] overflow-y-auto ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'}`}>
+            <h3 className={`font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[18px] text-center mb-4 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
               选择世界书
             </h3>
             
             {localWorldBooks.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] text-[#999]">
+                <p className={`font-['Source_Han_Sans_CN_VF:Light',sans-serif] text-[14px] ${isDarkMode ? 'text-[#888]' : 'text-[#999]'}`}>
                   暂无可用的局部世界书
                 </p>
               </div>
@@ -840,14 +918,14 @@ export default function ChatSettings() {
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
                         tempWorldBooksSelection.includes(book.id)
                           ? 'bg-[#7B9E7B] border-[#7B9E7B]'
-                          : 'bg-white border-[#d0d0d0]'
+                          : isDarkMode ? 'bg-[#1e1e1e] border-[#333]' : 'bg-white border-[#d0d0d0]'
                       }`}
                     >
                       {tempWorldBooksSelection.includes(book.id) && (
                         <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                       )}
                     </div>
-                    <span className="font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-[#333] text-left flex-1">
+                    <span className={`font-['Source_Han_Sans_CN_VF:Regular',sans-serif] text-[15px] text-left flex-1 ${isDarkMode ? 'text-white' : 'text-[#333]'}`}>
                       {book.name}
                     </span>
                   </button>
@@ -859,7 +937,11 @@ export default function ChatSettings() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowWorldBookSelector(false)}
-                className="flex-1 py-2.5 rounded-xl bg-[#f0f0f0] font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0] transition-colors"
+                className={`flex-1 py-2.5 rounded-xl font-['Source_Han_Sans_CN_VF:Medium',sans-serif] text-[14px] transition-colors ${
+                  isDarkMode 
+                    ? 'bg-[#2d2d2d] text-[#a0a0a0] hover:bg-[#3d3d3d] active:bg-[#3d3d3d]' 
+                    : 'bg-[#f0f0f0] text-[#666] hover:bg-[#e8e8e8] active:bg-[#e0e0e0]'
+                }`}
               >
                 取消
               </button>

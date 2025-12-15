@@ -8,6 +8,7 @@ import SettingsContainer from "./SettingsContainer";
 import WorldBookContainer from "./WorldBookContainer";
 import CharacterContainer from "./CharacterContainer";
 import ChatContainer from "./ChatContainer";
+import HealthContainer from "./HealthContainer";
 import { db, STORES } from "../utils/db";
 import { getImage } from "../utils/imageDB";
 import img6 from "figma:asset/e73c536866ed52e7d0ef00c933c627e72d682b14.png";
@@ -27,6 +28,7 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
   const [showSettings, setShowSettings] = useState(false);
   const [showWorldBook, setShowWorldBook] = useState(false);
   const [showCharacter, setShowCharacter] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [pendingChatId, setPendingChatId] = useState<string | null>(initialChatId || null);
   const [wallpaper, setWallpaper] = useState<string | null>(preloadedImages['desktop_wallpaper'] || null);
@@ -184,6 +186,14 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
     setShowCharacter(false);
   };
 
+  const handleHealthClick = () => {
+    setShowHealth(true);
+  };
+
+  const handleCloseHealth = () => {
+    setShowHealth(false);
+  };
+
   const handleChatClick = () => {
     setShowChat(true);
   };
@@ -328,7 +338,7 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
           
           {/* 桌面2 */}
           <div className="relative w-1/2 h-full flex-shrink-0">
-            <Desktop2 preloadedImages={preloadedImages} />
+            <Desktop2 preloadedImages={preloadedImages} onHealthClick={handleHealthClick} />
           </div>
         </div>
 
@@ -352,6 +362,11 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
       {/* 角色界面 */}
       {showCharacter && (
         <CharacterContainer onClose={handleCloseCharacter} />
+      )}
+
+      {/* 健康界面 */}
+      {showHealth && (
+        <HealthContainer onClose={handleCloseHealth} />
       )}
       
       {/* 聊天界面 */}
