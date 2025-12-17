@@ -81,8 +81,11 @@ export default function DataManagement({ onBack }: DataManagementProps) {
 
       const chatImagesSizeKB = parseFloat(imageStats[IMAGE_CATEGORIES.CHAT_IMAGES]?.size || '0.00');
       const chatImagesSizeBytes = chatImagesSizeKB * 1024;
+
+      const memesSizeKB = parseFloat(imageStats[IMAGE_CATEGORIES.MEMES]?.size || '0.00');
+      const memesSizeBytes = memesSizeKB * 1024;
       
-      const otherImagesSizeBytes = totalImageSizeBytes - chatImagesSizeBytes;
+      const otherImagesSizeBytes = totalImageSizeBytes - chatImagesSizeBytes - memesSizeBytes;
 
       const totalSizeBytes = chatMessagesSize + characterDataSize + worldBooksSize + systemDataSize + totalImageSizeBytes + stickersSize + healthScheduleSize;
 
@@ -96,7 +99,7 @@ export default function DataManagement({ onBack }: DataManagementProps) {
         otherDataSize: systemDataSize,
         chatImagesSize: chatImagesSizeBytes,
         otherImagesSize: otherImagesSizeBytes,
-        stickersSize: stickersSize,
+        stickersSize: stickersSize + memesSizeBytes,
         healthScheduleSize: healthScheduleSize,
         imageStats: {
           totalImages,

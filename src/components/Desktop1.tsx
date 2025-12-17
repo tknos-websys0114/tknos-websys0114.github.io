@@ -283,48 +283,52 @@ function ProfileWidget({ userData, onUserDataChange, colorMode, preloadedImages 
         </div>
         
         <div className="absolute contents left-[5.19%] top-[66.5%]" data-name="Group 1">
-          <div className="absolute flex items-center gap-[2.5%] left-[5.19%] top-[66.5%] w-[89.62%]">
+          <div className="absolute flex items-center gap-[2.5%] left-[5.19%] top-[66.5%] w-[89.62%] h-[12.8%]">
             {/* Rectangle 22 - 电池和图标容器 */}
-            <div className={`flex items-center rounded-[24px] px-[2.5%] py-[2.5%] gap-[8px] w-[59.5%] h-[46px] justify-end ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
-              <div className={`relative w-[68px] h-[28px] rounded-[8px] flex-shrink-0 ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
-                <div className={`absolute left-[6px] top-[6px] w-[28px] h-[16px] rounded-[4px] ${colorMode === 'dark' ? 'bg-[rgba(255,255,255,0.2)]' : 'bg-[#d9d9d9]'}`}>
+            <div className={`flex items-center rounded-[24px] px-[2.5%] py-[2.5%] gap-[3%] w-[59.5%] h-full justify-center ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
+              <div className={`relative h-[90%] aspect-[2.43/1] rounded-[8px] flex-shrink-0 ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
+                <div className={`absolute left-[8.8%] top-[21.4%] w-[41.2%] h-[57.1%] rounded-[4px] ${colorMode === 'dark' ? 'bg-[rgba(255,255,255,0.2)]' : 'bg-[#d9d9d9]'}`}>
                   <div 
                     className={`absolute left-0 top-0 h-full rounded-[4px] transition-all duration-300 ${colorMode === 'dark' ? 'bg-white' : 'bg-[#5c5c5c]'}`}
-                    style={{ width: `${batteryWidth}px` }}
+                    style={{ width: `${batteryLevel}%` }}
                   />
                 </div>
-                <p className={`absolute right-[4px] top-[6px] font-['Didact_Gothic:Regular',sans-serif] text-[12px] ${colorMode === 'dark' ? 'text-white' : 'text-[#5c5c5c]'}`}>
-                  {batteryLevel}%
-                </p>
-              </div>
-              <div className="relative size-[28px] flex-shrink-0">
-                <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
-                  <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[20px] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>♡</p>
+                <div className="absolute right-[6%] top-0 h-full flex items-center">
+                   <p className={`font-['Didact_Gothic:Regular',sans-serif] text-[clamp(10px,1.4vh,14px)] ${colorMode === 'dark' ? 'text-white' : 'text-[#5c5c5c]'}`}>
+                     {batteryLevel}%
+                   </p>
                 </div>
               </div>
-              <div className="relative size-[28px] flex-shrink-0">
+              
+              <div className="relative h-[90%] aspect-square flex-shrink-0">
                 <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
                   <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  {/* 音符符号♫，调整line-height确保完全居中 */}
-                  <p className={`font-['Arial','Noto_Sans_Symbols2:Regular',sans-serif] text-[20px] leading-[28px] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>♫</p>
+                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(15px,2.6vh,23px)] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>♡</p>
                 </div>
               </div>
-              <div className="relative size-[28px] flex-shrink-0">
+              
+              <div className="relative h-[90%] aspect-square flex-shrink-0">
                 <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
                   <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[20px] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>❀</p>
+                  <p className={`font-['Arial','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(15px,2.6vh,23px)] leading-none ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`} style={{ transform: 'translateY(5%)' }}>♫</p>
+                </div>
+              </div>
+              
+              <div className="relative h-[90%] aspect-square flex-shrink-0">
+                <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
+                  <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(15px,2.6vh,23px)] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>❀</p>
                 </div>
               </div>
             </div>
             {/* Rectangle 23 - 时间显示容器，与Rectangle 22高度一致，宽度固定 */}
-            <div className={`rounded-[24px] px-[3%] py-[2.5%] w-[38%] h-[46px] flex items-center justify-center ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.5)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
+            <div className={`rounded-[24px] px-[3%] py-[2.5%] w-[38%] h-full flex items-center justify-center ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.5)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
               <p className={`bakbak-one-regular text-[clamp(20px,6.5vw,26px)] text-center whitespace-nowrap overflow-hidden ${colorMode === 'dark' ? 'text-white/50' : 'text-[#afafaf]'}`}>
                 {formatTime(currentTime)}
               </p>
