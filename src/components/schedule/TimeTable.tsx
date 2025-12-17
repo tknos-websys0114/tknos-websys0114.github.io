@@ -605,7 +605,7 @@ export default function TimeTable() {
                       className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${settings.showWeekends ? 'bg-[#5A5A5A]' : 'bg-[#E0E0E0]'}`}
                     >
                       <motion.div 
-                        animate={{ x: settings.showWeekends ? 24 : 2 }}
+                        animate={{ x: settings.showWeekends ? 26 : 2 }}
                         className="w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm"
                       />
                     </button>

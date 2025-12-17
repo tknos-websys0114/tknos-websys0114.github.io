@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Upload, Trash2, Database, AlertTriangle, FileText, Archive, Image as ImageIcon, Check, HardDrive, PieChart, Save, RefreshCw, Server, User, MessageSquare, Eraser } from 'lucide-react';
+import { Download, Upload, Trash2, Database, AlertTriangle, FileText, Archive, Image as ImageIcon, Check, HardDrive, PieChart, Save, RefreshCw, Server, User, MessageSquare, Eraser, Sticker, Calendar } from 'lucide-react';
 import { db, STORES } from '../utils/db';
 import { exportAllImagesWithCategory, importAllImages, clearAllImages, getImageCategoryStats, IMAGE_CATEGORIES, listAllImages, deleteImage } from '../utils/imageDB';
 import { clearCache } from '../utils/chatCache';
@@ -31,6 +31,8 @@ export default function DataManagement({ onBack }: DataManagementProps) {
     otherDataSize: 0,
     chatImagesSize: 0,
     otherImagesSize: 0,
+    stickersSize: 0,
+    healthScheduleSize: 0,
     imageStats: {
       totalImages: 0,
       totalSize: 0,
@@ -62,8 +64,15 @@ export default function DataManagement({ onBack }: DataManagementProps) {
       const appearanceSize = await db.getStoreSize(STORES.APPEARANCE);
       const miscSize = await db.getStoreSize(STORES.MISC);
       const chatsSize = await db.getStoreSize(STORES.CHATS);
+      const healthSize = await db.getStoreSize(STORES.HEALTH);
+      const scheduleSize = await db.getStoreSize(STORES.SCHEDULE);
+      const stickersSize = await db.getStoreSize(STORES.STICKERS);
+      const bubblePresetsSize = await db.getStoreSize(STORES.BUBBLE_PRESETS);
+      const aiTasksSize = await db.getStoreSize(STORES.AI_TASKS);
 
-      const systemDataSize = apiSettingsSize + appearanceSize + miscSize + chatsSize + userDataSize + chatSettingsSize;
+      const systemDataSize = apiSettingsSize + appearanceSize + miscSize + chatsSize + userDataSize + chatSettingsSize + bubblePresetsSize + aiTasksSize;
+      
+      const healthScheduleSize = healthSize + scheduleSize;
       
       const imageStats = await getImageCategoryStats();
       const totalImages = Object.values(imageStats).reduce((sum, { count }) => sum + count, 0);
@@ -75,7 +84,7 @@ export default function DataManagement({ onBack }: DataManagementProps) {
       
       const otherImagesSizeBytes = totalImageSizeBytes - chatImagesSizeBytes;
 
-      const totalSizeBytes = chatMessagesSize + characterDataSize + worldBooksSize + systemDataSize + totalImageSizeBytes;
+      const totalSizeBytes = chatMessagesSize + characterDataSize + worldBooksSize + systemDataSize + totalImageSizeBytes + stickersSize + healthScheduleSize;
 
       setStats({
         totalSize: totalSizeBytes,
@@ -87,6 +96,8 @@ export default function DataManagement({ onBack }: DataManagementProps) {
         otherDataSize: systemDataSize,
         chatImagesSize: chatImagesSizeBytes,
         otherImagesSize: otherImagesSizeBytes,
+        stickersSize: stickersSize,
+        healthScheduleSize: healthScheduleSize,
         imageStats: {
           totalImages,
           totalSize: totalImageSizeBytes,
@@ -333,6 +344,16 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                    className="bg-orange-500 h-full border-r border-white" 
                    style={{ width: `${Math.min(100, (stats.worldBooksSize / stats.totalSize) * 100)}%` }} 
                 />
+                 {/* Stickers - Pink */}
+                 <div 
+                   className="bg-pink-500 h-full border-r border-white" 
+                   style={{ width: `${Math.min(100, (stats.stickersSize / stats.totalSize) * 100)}%` }} 
+                />
+                 {/* Health & Schedule - Cyan */}
+                 <div 
+                   className="bg-cyan-500 h-full border-r border-white" 
+                   style={{ width: `${Math.min(100, (stats.healthScheduleSize / stats.totalSize) * 100)}%` }} 
+                />
                  {/* System Data - Slate */}
                  <div 
                    className="bg-slate-500 h-full" 
@@ -346,9 +367,11 @@ export default function DataManagement({ onBack }: DataManagementProps) {
                   { label: '聊天记录', value: stats.chatMessagesSize, icon: MessageSquare, color: 'text-blue-600' },
                   { label: '人物档案', value: stats.characterDataSize, icon: User, color: 'text-purple-600' },
                   { label: '聊天图片', value: stats.chatImagesSize, icon: ImageIcon, color: 'text-emerald-600' },
+                  { label: '表情包', value: stats.stickersSize, icon: Sticker, color: 'text-pink-600' },
                   { label: '其他媒体', value: stats.otherImagesSize, icon: ImageIcon, color: 'text-teal-600' },
                   { label: '世界书', value: stats.worldBooksSize, icon: Database, color: 'text-orange-600' },
                   { label: '系统配置', value: stats.otherDataSize, icon: Archive, color: 'text-slate-600' },
+                  { label: '日程与健康', value: stats.healthScheduleSize, icon: Calendar, color: 'text-cyan-600' },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 border border-slate-100 bg-slate-50/50">
                      <div className="flex items-center gap-2">
