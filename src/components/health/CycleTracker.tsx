@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Flower2, Settings, Calendar as CalendarIcon, Trash2, X, Save, Bell, User } from "lucide-react";
+import { motion } from "motion/react";
+import { ChevronLeft, ChevronRight, Flower2, Settings, Calendar as CalendarIcon, Trash2, X, Save, Bell, User, Check } from "lucide-react";
 import { db, STORES } from "../../utils/db";
-import { toast } from "sonner@2.0.3";
 import { calculateCycleStatus } from "../../utils/healthStatusUtils";
 
 interface CycleLog {
@@ -39,6 +39,13 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
   // Settings Form
   const [tempSettings, setTempSettings] = useState<CycleSettings>(DEFAULT_SETTINGS);
 
+  const [alert, setAlert] = useState<{ show: boolean; type: 'success' | 'error'; message: string } | null>(null);
+
+  const showAlert = (type: 'success' | 'error', message: string) => {
+    setAlert({ show: true, type, message });
+    setTimeout(() => setAlert(null), 2000);
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -72,18 +79,7 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
     
     // Check if date already exists
     if (logs.some(l => l.startDate === logDate)) {
-      toast.error("该日期已记录", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '该日期已记录');
       return;
     }
 
@@ -98,31 +94,9 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
       await db.set(STORES.HEALTH, 'cycle_logs', updatedLogs);
       setLogs(updatedLogs);
       setShowLogModal(false);
-      toast.success("记录已保存", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('success', '记录已保存');
     } catch (error) {
-      toast.error("保存失败", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '保存失败');
     }
   };
 
@@ -133,31 +107,9 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
       const updatedLogs = logs.filter(l => l.id !== id);
       await db.set(STORES.HEALTH, 'cycle_logs', updatedLogs);
       setLogs(updatedLogs);
-      toast.success("记录已删除", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('success', '记录已删除');
     } catch (error) {
-      toast.error("删除失败", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '删除失败');
     }
   };
 
@@ -166,31 +118,9 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
       await db.set(STORES.HEALTH, 'cycle_settings', tempSettings);
       setSettings(tempSettings);
       setShowSettingsModal(false);
-      toast.success("设置已更新", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('success', '设置已更新');
     } catch (error) {
-      toast.error("更新失败", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '更新失败');
     }
   };
 
@@ -277,6 +207,7 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
 
   return (
     <div className="flex flex-col h-full">
+
       {/* Header */}
       <div className="px-6 pt-8 pb-4 flex items-center justify-between sticky top-0 z-10">
         <button
@@ -539,6 +470,35 @@ export default function CycleTracker({ onBack }: CycleTrackerProps) {
                  </div>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* Alert Modal */}
+      {alert && alert.show && (
+        <div className="fixed top-[90px] inset-x-0 z-[100] flex justify-center pointer-events-none">
+           <motion.div 
+             initial={{ scale: 0.9, opacity: 0, y: -10 }}
+             animate={{ scale: 1, opacity: 1, y: 0 }}
+             exit={{ scale: 0.9, opacity: 0, y: -10 }}
+             className="mx-auto w-fit flex items-center gap-2 px-4 py-3 pointer-events-auto"
+             style={{
+                background: 'rgba(253, 251, 247, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                borderRadius: '20px',
+                color: '#5C6B7F',
+                boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
+                fontSize: '13px',
+                fontWeight: 'bold'
+             }}
+           >
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${
+                  alert.type === 'success' ? 'bg-[#FFB7B2]' : 'bg-[#E57373]'
+              }`}>
+                  {alert.type === 'success' ? <Check className="w-3 h-3" strokeWidth={3} /> : <X className="w-3 h-3" strokeWidth={3} />}
+              </div>
+              <span>{alert.message}</span>
+           </motion.div>
         </div>
       )}
 

@@ -9,6 +9,7 @@ import WorldBookContainer from "./WorldBookContainer";
 import CharacterContainer from "./CharacterContainer";
 import ChatContainer from "./ChatContainer";
 import HealthContainer from "./HealthContainer";
+import ScheduleContainer from "./ScheduleContainer";
 import { db, STORES } from "../utils/db";
 import { getImage } from "../utils/imageDB";
 import img6 from "figma:asset/e73c536866ed52e7d0ef00c933c627e72d682b14.png";
@@ -29,6 +30,7 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
   const [showWorldBook, setShowWorldBook] = useState(false);
   const [showCharacter, setShowCharacter] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [pendingChatId, setPendingChatId] = useState<string | null>(initialChatId || null);
   const [wallpaper, setWallpaper] = useState<string | null>(preloadedImages['desktop_wallpaper'] || null);
@@ -194,6 +196,14 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
     setShowHealth(false);
   };
 
+  const handleScheduleClick = () => {
+    setShowSchedule(true);
+  };
+
+  const handleCloseSchedule = () => {
+    setShowSchedule(false);
+  };
+
   const handleChatClick = () => {
     setShowChat(true);
   };
@@ -338,7 +348,7 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
           
           {/* 桌面2 */}
           <div className="relative w-1/2 h-full flex-shrink-0">
-            <Desktop2 preloadedImages={preloadedImages} onHealthClick={handleHealthClick} />
+            <Desktop2 preloadedImages={preloadedImages} onHealthClick={handleHealthClick} onScheduleClick={handleScheduleClick} />
           </div>
         </div>
 
@@ -367,6 +377,11 @@ export default function SwipeableDesktop({ userData, preloadedImages = {}, initi
       {/* 健康界面 */}
       {showHealth && (
         <HealthContainer onClose={handleCloseHealth} />
+      )}
+      
+      {/* 日程界面 */}
+      {showSchedule && (
+        <ScheduleContainer onClose={handleCloseSchedule} />
       )}
       
       {/* 聊天界面 */}

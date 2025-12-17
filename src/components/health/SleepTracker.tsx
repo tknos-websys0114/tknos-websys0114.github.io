@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Moon, ThumbsUp, Minus, ThumbsDown, Trash2, Clock, Check } from "lucide-react";
+import { motion } from "motion/react";
+import { ChevronLeft, ChevronRight, Moon, ThumbsUp, Minus, ThumbsDown, Trash2, Clock, Check, X } from "lucide-react";
 import { db, STORES } from "../../utils/db";
-import { toast } from "sonner@2.0.3";
 
 interface SleepLog {
   id: string;
@@ -22,6 +22,13 @@ export default function SleepTracker({ onBack }: SleepTrackerProps) {
   const [sleepTimeStr, setSleepTimeStr] = useState('');
   const [wakeTimeStr, setWakeTimeStr] = useState('');
   const [quality, setQuality] = useState<'good' | 'average' | 'poor'>('good');
+
+  const [alert, setAlert] = useState<{ show: boolean; type: 'success' | 'error'; message: string } | null>(null);
+
+  const showAlert = (type: 'success' | 'error', message: string) => {
+    setAlert({ show: true, type, message });
+    setTimeout(() => setAlert(null), 2000);
+  };
 
   useEffect(() => {
     loadLogs();
@@ -96,18 +103,7 @@ export default function SleepTracker({ onBack }: SleepTrackerProps) {
   const handleSave = async () => {
     // Validate inputs
     if (sleepTimeStr.length !== 5 || wakeTimeStr.length !== 5) {
-      toast.error("请输入完整的时间 (例如 23:00)", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '请输入完整的时间 (例如 23:00)');
       return;
     }
 
@@ -153,31 +149,9 @@ export default function SleepTracker({ onBack }: SleepTrackerProps) {
       await db.set(STORES.HEALTH, 'sleep_logs', updatedLogs);
       setLogs(updatedLogs);
       
-      toast.success("睡眠记录已保存", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('success', '睡眠记录已保存');
     } catch (error) {
-      toast.error("保存失败", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '保存失败');
     }
   };
 
@@ -192,31 +166,9 @@ export default function SleepTracker({ onBack }: SleepTrackerProps) {
       setWakeTimeStr('');
       setQuality('good');
       
-      toast.success("记录已删除", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('success', '记录已删除');
     } catch (error) {
-      toast.error("删除失败", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      showAlert('error', '删除失败');
     }
   };
 
@@ -239,6 +191,7 @@ export default function SleepTracker({ onBack }: SleepTrackerProps) {
 
   return (
     <div className="flex flex-col h-full">
+
       {/* Header */}
       <div className="px-6 pt-8 pb-4 flex items-center justify-between sticky top-0 z-10">
         <button
@@ -353,6 +306,34 @@ export default function SleepTracker({ onBack }: SleepTrackerProps) {
            </div>
         </div>
       </div>
+      {/* Alert Modal */}
+      {alert && alert.show && (
+        <div className="fixed top-[90px] inset-x-0 z-[100] flex justify-center pointer-events-none">
+           <motion.div 
+             initial={{ scale: 0.9, opacity: 0, y: -10 }}
+             animate={{ scale: 1, opacity: 1, y: 0 }}
+             exit={{ scale: 0.9, opacity: 0, y: -10 }}
+             className="mx-auto w-fit flex items-center gap-2 px-4 py-3 pointer-events-auto"
+             style={{
+                background: 'rgba(253, 251, 247, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                borderRadius: '20px',
+                color: '#5C6B7F',
+                boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
+                fontSize: '13px',
+                fontWeight: 'bold'
+             }}
+           >
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${
+                  alert.type === 'success' ? 'bg-[#AEC6CF]' : 'bg-[#E57373]'
+              }`}>
+                  {alert.type === 'success' ? <Check className="w-3 h-3" strokeWidth={3} /> : <X className="w-3 h-3" strokeWidth={3} />}
+              </div>
+              <span>{alert.message}</span>
+           </motion.div>
+        </div>
+      )}
     </div>
   );
 }

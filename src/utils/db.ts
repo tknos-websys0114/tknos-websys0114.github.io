@@ -1,6 +1,6 @@
 // IndexedDB 数据库工具类
 const DB_NAME = 'ToukenRanbuDB';
-const DB_VERSION = 8; // 升级版本以添加 HEALTH store
+const DB_VERSION = 9; // 升级版本以添加 SCHEDULE store
 
 // 数据库stores
 export const STORES = {
@@ -17,6 +17,7 @@ export const STORES = {
   BUBBLE_PRESETS: 'bubblePresets', // 气泡样式预设
   AI_TASKS: 'aiTasks', // AI 任务队列
   HEALTH: 'health', // 健康数据
+  SCHEDULE: 'schedule', // 日程/待办/课表数据
 };
 
 class Database {
@@ -120,6 +121,10 @@ class Database {
         if (!db.objectStoreNames.contains(STORES.HEALTH)) {
           db.createObjectStore(STORES.HEALTH);
           console.log('Created store:', STORES.HEALTH);
+        }
+        if (!db.objectStoreNames.contains(STORES.SCHEDULE)) {
+          db.createObjectStore(STORES.SCHEDULE);
+          console.log('Created store:', STORES.SCHEDULE);
         }
       };
     });

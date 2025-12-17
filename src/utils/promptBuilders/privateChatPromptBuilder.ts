@@ -7,6 +7,7 @@
 import { db, STORES } from '../db';
 import solarlunar from 'solarlunar';
 import { getHealthStatus } from '../healthStatusUtils';
+import { getScheduleStatus } from '../scheduleStatusUtils';
 
 export interface PrivateChatPromptOptions {
   characterId: string;
@@ -86,6 +87,9 @@ export async function buildPrivateChatPrompt(
     // 8. 获取健康状态
     const healthStatus = await getHealthStatus(characterId);
 
+    // 8.1 获取日程状态
+    const scheduleStatus = await getScheduleStatus(characterId);
+
     // 9. 构建聊天历史并检查是否有未领取的用户红包
     const { chatHistory, hasUnclaimedUserRedPacket } = await buildChatHistory(
       allMessages,
@@ -108,6 +112,7 @@ export async function buildPrivateChatPrompt(
       chatSettings,
       hasUnclaimedUserRedPacket,
       healthStatus,
+      scheduleStatus,
     });
     
     // 11. 构建用户 prompt
@@ -429,7 +434,7 @@ async function getStickerInfo(enableStickers: boolean, stickerProbability: numbe
     } else if (stickerProbability <= 40) {
       stickerGuidance = `你可以在回复中偶尔使用以下表情包来增强情感表达。不要在每次回复中都使用表情包，只在感觉合适的时候使用。表情包应该自然地融入对话中，而不是总是放在最后。`;
     } else if (stickerProbability <= 60) {
-      stickerGuidance = `你可以在回复中适度使用以下表情包，就像真实的聊天那样，根据对话氛围灵活选择合适的时机发送表情包。表情包应该自然地融入对话中，而不是总是放在最后。`;
+      stickerGuidance = `你可以在回复中适度使用以下表情包，就像真实的聊天那样，根据对话氛围���活选择合适的时机发送表情包。表情包应该自然地融入对话中，而不是总是放在最后。`;
     } else if (stickerProbability <= 80) {
       stickerGuidance = `你可以在回复中较为频繁地使用以下表情包，就像一个喜欢使用表情包的人那样。根据对话氛围灵活选择合适的时机发送表情包。表情包应该自然地融入对话中，而不是总是放在最后。`;
     } else {
@@ -582,7 +587,7 @@ async function buildChatHistory(
  * 构建系统 prompt
  */
 function buildSystemPrompt(params: any) {
-  const { character, userData, userNickname, worldBooks, timeInfo, chatHistory, stickerInfo, chatSettings, hasUnclaimedUserRedPacket, healthStatus } = params;
+  const { character, userData, userNickname, worldBooks, timeInfo, chatHistory, stickerInfo, chatSettings, hasUnclaimedUserRedPacket, healthStatus, scheduleStatus } = params;
   
   // 构建世界书内容
   const beforeWorldBooksContent = worldBooks.before.map((wb: any, idx: number) =>  
@@ -638,6 +643,11 @@ function buildSystemPrompt(params: any) {
   const healthStatusSection = healthStatus 
     ? `\n  - **当前身体状态:** ${healthStatus}\n  - **应对规范:** 角色可根据其中信息，在对话中自然地表现关心、提醒或态度。- 不得完整复述健康数据- 不得持续围绕健康话题- 是否提及、如何提及，需符合角色性格设定- 提及应轻描淡写，不喧宾夺主`
     : '';
+
+  // 构建日程状态信息
+  const scheduleStatusSection = scheduleStatus
+    ? `\n  - **当前日程状态:** ${scheduleStatus}\n  - **应对规范:** 角色可根据日程安排提醒审神者、询问进度或调整自己的安排。`
+    : '';
   
   return `你现在要进行一个"私聊模拟"角色扮演
 
@@ -665,7 +675,7 @@ ${timeInfoText ? `- ${timeInfoText}` : ''}
   - **审神者名:** ${userData.name}
   - **属国:** ${userData.country}
   - **本丸名:** ${userData.fortress}
-  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.initialSword ? `\n  - **初始刀:** ${userData.initialSword}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}${healthStatusSection}
+  - **就任日:** ${userData.date}${userData.birthday ? `\n  - **生日:** ${userData.birthday}` : ''}${userData.attendant ? `\n  - **近侍:** ${userData.attendant}` : ''}${userData.initialSword ? `\n  - **初始刀:** ${userData.initialSword}` : ''}${userData.description ? `\n  - **详细介绍:** ${userData.description}` : ''}${healthStatusSection}${scheduleStatusSection}
 
 **你的任务与输出格式 (请严格遵守):**
 - **任务:**  

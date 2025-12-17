@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { motion } from "motion/react";
 import { ChevronLeft, Moon, Flower2, Activity, Share2, X, Check, Users, User, ChevronRight, Stethoscope } from "lucide-react";
 import { db, STORES } from "../../utils/db";
-import { toast } from "sonner@2.0.3";
 
 interface HealthDashboardProps {
   onClose: () => void;
@@ -28,6 +28,8 @@ const DEFAULT_SETTINGS: HealthSettings = {
 
 export default function HealthDashboard({ onClose, onNavigate }: HealthDashboardProps) {
   const [showSettings, setShowSettings] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
   const [settings, setSettings] = useState<HealthSettings>(DEFAULT_SETTINGS);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [isCharSelectOpen, setIsCharSelectOpen] = useState(false);
@@ -59,20 +61,11 @@ export default function HealthDashboard({ onClose, onNavigate }: HealthDashboard
     try {
       await db.set(STORES.HEALTH, 'health_settings', settings);
       setShowSettings(false);
-      toast.success("共享设置已保存", {
-        style: {
-           background: 'rgba(253, 251, 247, 0.85)',
-           backdropFilter: 'blur(12px)',
-           border: '1px solid rgba(255, 255, 255, 0.6)',
-           borderRadius: '20px',
-           color: '#5C6B7F',
-           boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
-           fontSize: '13px',
-           fontWeight: 'bold'
-        }
-      });
+      setShowSuccessAlert(true);
+      setTimeout(() => setShowSuccessAlert(false), 2000);
     } catch (e) {
-      toast.error("保存失败");
+      setShowErrorAlert(true);
+      setTimeout(() => setShowErrorAlert(false), 2000);
     }
   };
 
@@ -296,6 +289,59 @@ export default function HealthDashboard({ onClose, onNavigate }: HealthDashboard
                  </button>
               </div>
            </div>
+        </div>
+      )}
+      {/* Success Modal */}
+      {showSuccessAlert && (
+        <div className="fixed top-[90px] inset-x-0 z-[100] flex justify-center pointer-events-none">
+           <motion.div 
+             initial={{ scale: 0.9, opacity: 0, y: -10 }}
+             animate={{ scale: 1, opacity: 1, y: 0 }}
+             exit={{ scale: 0.9, opacity: 0, y: -10 }}
+             className="mx-auto w-fit flex items-center gap-2 px-4 py-3 pointer-events-auto"
+             style={{
+                background: 'rgba(253, 251, 247, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                borderRadius: '20px',
+                color: '#5C6B7F',
+                boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
+                fontSize: '13px',
+                fontWeight: 'bold'
+             }}
+           >
+              <div className="w-5 h-5 rounded-full bg-[#AEC6CF] flex items-center justify-center text-white">
+                  <Check className="w-3 h-3" strokeWidth={3} />
+              </div>
+              <span>共享设置已保存</span>
+           </motion.div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {showErrorAlert && (
+        <div className="fixed top-[90px] inset-x-0 z-[100] flex justify-center pointer-events-none">
+           <motion.div 
+             initial={{ scale: 0.9, opacity: 0, y: -10 }}
+             animate={{ scale: 1, opacity: 1, y: 0 }}
+             exit={{ scale: 0.9, opacity: 0, y: -10 }}
+             className="mx-auto w-fit flex items-center gap-2 px-4 py-3 pointer-events-auto"
+             style={{
+                background: 'rgba(253, 251, 247, 0.85)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                borderRadius: '20px',
+                color: '#5C6B7F',
+                boxShadow: '0 10px 40px -10px rgba(92, 107, 127, 0.15)',
+                fontSize: '13px',
+                fontWeight: 'bold'
+             }}
+           >
+              <div className="w-5 h-5 rounded-full bg-[#E57373] flex items-center justify-center text-white">
+                  <X className="w-3 h-3" strokeWidth={3} />
+              </div>
+              <span>保存失败</span>
+           </motion.div>
         </div>
       )}
     </div>
