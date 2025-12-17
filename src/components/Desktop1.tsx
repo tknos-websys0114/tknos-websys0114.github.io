@@ -286,7 +286,7 @@ function ProfileWidget({ userData, onUserDataChange, colorMode, preloadedImages 
           <div className="absolute flex items-center gap-[2.5%] left-[5.19%] top-[66.5%] w-[89.62%] h-[12.8%]">
             {/* Rectangle 22 - 电池和图标容器 */}
             <div className={`flex items-center rounded-[24px] px-[2.5%] py-[2.5%] gap-[3%] w-[59.5%] h-full justify-center ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
-              <div className={`relative h-[90%] aspect-[2.43/1] rounded-[8px] flex-shrink-0 ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
+              <div className={`relative h-[95%] aspect-[2.43/1] rounded-[8px] flex-shrink-0 ${colorMode === 'dark' ? 'bg-[rgba(0,0,0,0.3)]' : 'bg-[rgba(255,255,255,0.5)]'}`}>
                 <div className={`absolute left-[8.8%] top-[21.4%] w-[41.2%] h-[57.1%] rounded-[4px] ${colorMode === 'dark' ? 'bg-[rgba(255,255,255,0.2)]' : 'bg-[#d9d9d9]'}`}>
                   <div 
                     className={`absolute left-0 top-0 h-full rounded-[4px] transition-all duration-300 ${colorMode === 'dark' ? 'bg-white' : 'bg-[#5c5c5c]'}`}
@@ -300,30 +300,30 @@ function ProfileWidget({ userData, onUserDataChange, colorMode, preloadedImages 
                 </div>
               </div>
               
-              <div className="relative h-[90%] aspect-square flex-shrink-0">
+              <div className="relative h-[95%] aspect-square flex-shrink-0">
                 <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
                   <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(15px,2.6vh,23px)] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>♡</p>
+                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(12px,2.1vh,19px)] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>♡</p>
                 </div>
               </div>
               
-              <div className="relative h-[90%] aspect-square flex-shrink-0">
+              <div className="relative h-[95%] aspect-square flex-shrink-0">
                 <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
                   <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <p className={`font-['Arial','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(15px,2.6vh,23px)] leading-none ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`} style={{ transform: 'translateY(5%)' }}>♫</p>
+                  <p className={`font-['Arial','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(12px,2.1vh,19px)] leading-none ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`} style={{ transform: 'translateY(5%)' }}>♫</p>
                 </div>
               </div>
               
-              <div className="relative h-[90%] aspect-square flex-shrink-0">
+              <div className="relative h-[95%] aspect-square flex-shrink-0">
                 <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 28 28">
                   <circle cx="14" cy="14" fill={colorMode === 'dark' ? 'rgba(0,0,0,0.5)' : 'white'} fillOpacity="0.5" r="14" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(15px,2.6vh,23px)] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>❀</p>
+                  <p className={`font-['Didact_Gothic:Regular','Noto_Sans_Symbols2:Regular',sans-serif] text-[clamp(12px,2.1vh,19px)] ${colorMode === 'dark' ? 'text-white/70' : 'text-[#5c5c5c]'}`}>❀</p>
                 </div>
               </div>
             </div>
