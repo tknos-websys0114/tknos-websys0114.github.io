@@ -1,1 +1,0 @@
-import { compressImageToBase64 } from "../utils/imageCompression";
