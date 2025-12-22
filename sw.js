@@ -295,7 +295,9 @@ self.addEventListener('message', async (event) => {
       const isVisible = allClients.some(client => client.visibilityState === 'visible');
 
       // 如果应用在后台，发送系统通知
-      if (!isVisible) {
+      // TODO: TWA/PWA 通知功能暂时禁用，待打包 App 时开启。将 ENABLE_NOTIFICATIONS 改为 true 即可启用。
+      const ENABLE_NOTIFICATIONS = false;
+      if (ENABLE_NOTIFICATIONS && !isVisible) {
         const lastMsg = newMessages[newMessages.length - 1];
         const title = payload.displayName || payload.characterName || '新消息';
         
@@ -374,7 +376,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // IndexedDB Helper Functions
 const DB_NAME = 'ToukenRanbuDB';
-const DB_VERSION = 7;
+const DB_VERSION = 9;
 const STORES = {
   CHAT_MESSAGES: 'chatMessages',
   CHATS: 'chats'
@@ -442,11 +444,13 @@ async function saveMessageToDB(characterId, newMessages, senderDisplayName) {
       
       tx.oncomplete = () => {
         console.log('[Service Worker] Messages saved to DB');
+        db.close();
         resolve();
       };
       
       tx.onerror = () => {
         console.error('[Service Worker] Transaction failed:', tx.error);
+        db.close();
         reject(tx.error);
       };
     });
