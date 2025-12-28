@@ -84,6 +84,7 @@ self.addEventListener('message', async (event) => {
   // 处理 AI 任务
   if (type === 'PROCESS_AI_TASK') {
     console.log('[Service Worker] 收到 AI 任务:', payload);
+    const { taskType } = payload;
     
     try {
       let { apiConfig, messages } = payload;
@@ -127,7 +128,6 @@ self.addEventListener('message', async (event) => {
         console.log('[Service Worker] 图片识别结果:', imageDescription);
         
         // 将图片识别结果添加到消息历史中
-        // 修改用户的 prompt，添加图片描述
         messages = [
           messages[0], // system prompt
           {
@@ -163,171 +163,191 @@ self.addEventListener('message', async (event) => {
         throw new Error('AI未返回有效响应');
       }
       
-      // 解析 AI 返回的消息（更健壮的解析逻辑）
       console.log('[Service Worker] AI 原始响应:', aiResponse);
-      
-      let parsedResponse;
-      let aiMessages = [];
-      
-      try {
-        // 1. 尝试直接解析整个响应
-        parsedResponse = JSON.parse(aiResponse);
-        aiMessages = parsedResponse.messages || [];
-      } catch (e1) {
-        console.log('[Service Worker] 直接解析失败，尝试提取 JSON...');
-        
-        try {
-          // 2. 尝试提取 markdown 代码块中的 JSON
-          const codeBlockMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-          if (codeBlockMatch) {
-            parsedResponse = JSON.parse(codeBlockMatch[1]);
-            aiMessages = parsedResponse.messages || [];
-          } else {
-            // 3. 尝试提取第一个完整的 JSON 对象
-            // 使用更智能的方法：找到第一个 { 然后匹配对应的 }
-            const firstBrace = aiResponse.indexOf('{');
-            if (firstBrace === -1) {
-              throw new Error('响应中未找到 JSON 对象');
-            }
-            
-            let braceCount = 0;
-            let jsonEnd = -1;
-            
-            for (let i = firstBrace; i < aiResponse.length; i++) {
-              if (aiResponse[i] === '{') braceCount++;
-              if (aiResponse[i] === '}') braceCount--;
-              
-              if (braceCount === 0) {
-                jsonEnd = i + 1;
-                break;
+
+      // 分支逻辑：记忆提取 vs 聊天回复
+      if (taskType === 'memory_extraction') {
+          const memories = parseMemoryResult(aiResponse);
+          await saveMemoriesToDB(payload.characterId, memories);
+
+          // 发送成功消息给所有客户端
+          const clients = await self.clients.matchAll();
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'AI_TASK_COMPLETED',
+              payload: {
+                taskId: payload.taskId,
+                characterId: payload.characterId,
+                taskType: 'memory_extraction',
+                result: { memories }
               }
-            }
-            
-            if (jsonEnd === -1) {
-              throw new Error('JSON 对象未正确闭合');
-            }
-            
-            const jsonStr = aiResponse.substring(firstBrace, jsonEnd);
-            parsedResponse = JSON.parse(jsonStr);
+            });
+          });
+          console.log('[Service Worker] 记忆提取任务完成:', payload.taskId);
+
+      } else {
+          // 默认：聊天回复逻辑
+          
+          let parsedResponse;
+          let aiMessages = [];
+          
+          try {
+            // 1. 尝试直接解析整个响应
+            parsedResponse = JSON.parse(aiResponse);
             aiMessages = parsedResponse.messages || [];
+          } catch (e1) {
+            console.log('[Service Worker] 直接解析失败，尝试提取 JSON...');
+            
+            try {
+              // 2. 尝试提取 markdown 代码块中的 JSON
+              const codeBlockMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+              if (codeBlockMatch) {
+                parsedResponse = JSON.parse(codeBlockMatch[1]);
+                aiMessages = parsedResponse.messages || [];
+              } else {
+                // 3. 尝试提取第一个完整的 JSON 对象
+                const firstBrace = aiResponse.indexOf('{');
+                if (firstBrace === -1) {
+                  throw new Error('响应中未找到 JSON 对象');
+                }
+                
+                let braceCount = 0;
+                let jsonEnd = -1;
+                
+                for (let i = firstBrace; i < aiResponse.length; i++) {
+                  if (aiResponse[i] === '{') braceCount++;
+                  if (aiResponse[i] === '}') braceCount--;
+                  
+                  if (braceCount === 0) {
+                    jsonEnd = i + 1;
+                    break;
+                  }
+                }
+                
+                if (jsonEnd === -1) {
+                  throw new Error('JSON 对象未正确闭合');
+                }
+                
+                const jsonStr = aiResponse.substring(firstBrace, jsonEnd);
+                parsedResponse = JSON.parse(jsonStr);
+                aiMessages = parsedResponse.messages || [];
+              }
+            } catch (e2) {
+              console.error('[Service Worker] JSON 解析失败:', e2.message);
+              console.error('[Service Worker] AI 响应内容:', aiResponse);
+              throw new Error(`AI响应格式错误: ${e2.message}`);
+            }
           }
-        } catch (e2) {
-          console.error('[Service Worker] JSON 解析失败:', e2.message);
-          console.error('[Service Worker] AI 响应内容:', aiResponse);
-          throw new Error(`AI响应格式错误: ${e2.message}`);
-        }
-      }
-      
-      if (aiMessages.length === 0) {
-        throw new Error('AI未返回任何消息');
-      }
-      
-      // 构建消息对象
-      const newMessages = aiMessages.map((msg, index) => {
-        // 处理系统消息（如领取红包）
-        if (msg.sender === 'system') {
-          return {
-            id: `${Date.now()}-${index}`,
-            text: msg.content,
-            senderId: 'system',
-            senderName: '系统',
-            timestamp: new Date().toISOString(),
-            isRead: true,
-          };
-        }
+          
+          if (aiMessages.length === 0) {
+            throw new Error('AI未返回任何消息');
+          }
+          
+          // 构建消息对象
+          const newMessages = aiMessages.map((msg, index) => {
+            // 处理系统消息
+            if (msg.sender === 'system') {
+              return {
+                id: `${Date.now()}-${index}`,
+                text: msg.content,
+                senderId: 'system',
+                senderName: '系统',
+                timestamp: new Date().toISOString(),
+                isRead: true,
+              };
+            }
 
-        // 处理伪图片消息
-        if (msg.isPlaceholderImage) {
-          const description = (msg.content || '').slice(0, 100);
-          return {
-            id: `${Date.now()}-${index}`,
-            text: description,
-            senderId: 'character',
-            senderName: payload.characterName,
-            timestamp: new Date().toISOString(),
-            isPlaceholderImage: true,
-            isRead: true,
-          };
-        }
-        
-        // 处理红包消息
-        if (msg.redPacket) {
-          return {
-            id: `${Date.now()}-${index}`,
-            text: '[红包]',
-            senderId: 'character',
-            senderName: payload.characterName,
-            timestamp: new Date().toISOString(),
-            redPacket: {
-              amount: msg.redPacket.amount,
-              blessing: msg.redPacket.blessing,
-              opened: false,
-            },
-            isRead: true,
-          };
-        }
-        
-        const message = {
-          id: `${Date.now()}-${index}`,
-          text: msg.stickerId ? '[表情]' : (msg.content || ''),
-          senderId: 'character',
-          senderName: payload.characterName,
-          timestamp: new Date().toISOString(),
-          stickerId: msg.stickerId,
-          isRead: true,
-        };
-        
-        if (msg.quote) {
-          message.quote = {
-            sender: msg.quote.sender,
-            content: msg.quote.content,
-          };
-        }
-        
-        return message;
-      });
-      
-      // 保存消息到 IndexedDB 并更新未读计数
-      await saveMessageToDB(payload.characterId, newMessages, payload.displayName);
-      
-      // 检查此时是否有前台窗口
-      const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      const isVisible = allClients.some(client => client.visibilityState === 'visible');
+            // 处理伪图片消息
+            if (msg.isPlaceholderImage) {
+              const description = (msg.content || '').slice(0, 100);
+              return {
+                id: `${Date.now()}-${index}`,
+                text: description,
+                senderId: 'character',
+                senderName: payload.characterName,
+                timestamp: new Date().toISOString(),
+                isPlaceholderImage: true,
+                isRead: true,
+              };
+            }
+            
+            // 处理红包消息
+            if (msg.redPacket) {
+              return {
+                id: `${Date.now()}-${index}`,
+                text: '[红包]',
+                senderId: 'character',
+                senderName: payload.characterName,
+                timestamp: new Date().toISOString(),
+                redPacket: {
+                  amount: msg.redPacket.amount,
+                  blessing: msg.redPacket.blessing,
+                  opened: false,
+                },
+                isRead: true,
+              };
+            }
+            
+            const message = {
+              id: `${Date.now()}-${index}`,
+              text: msg.stickerId ? '[表情]' : (msg.content || ''),
+              senderId: 'character',
+              senderName: payload.characterName,
+              timestamp: new Date().toISOString(),
+              stickerId: msg.stickerId,
+              isRead: true,
+            };
+            
+            if (msg.quote) {
+              message.quote = {
+                sender: msg.quote.sender,
+                content: msg.quote.content,
+              };
+            }
+            
+            return message;
+          });
+          
+          // 保存消息到 IndexedDB 并更新未读计数
+          await saveMessageToDB(payload.characterId, newMessages, payload.displayName);
+          
+          // 检查此时是否有前台窗口
+          const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+          const isVisible = allClients.some(client => client.visibilityState === 'visible');
 
-      // 如果应用在后台，发送系统通知
-      // TODO: TWA/PWA 通知功能暂时禁用，待打包 App 时开启。将 ENABLE_NOTIFICATIONS 改为 true 即可启用。
-      const ENABLE_NOTIFICATIONS = false;
-      if (ENABLE_NOTIFICATIONS && !isVisible) {
-        const lastMsg = newMessages[newMessages.length - 1];
-        const title = payload.displayName || payload.characterName || '新消息';
-        
-        self.registration.showNotification(title, {
-          body: lastMsg.text,
-          icon: "/icon-192.png",
-          badge: "/icon-192.png",
-          tag: payload.characterId,
-          data: {
-            conversationId: payload.characterId,
-            characterName: title // Add character name for frontend
+          // 如果应用在后台，发送系统通知
+          const ENABLE_NOTIFICATIONS = false;
+          if (ENABLE_NOTIFICATIONS && !isVisible) {
+            const lastMsg = newMessages[newMessages.length - 1];
+            const title = payload.displayName || payload.characterName || '新消息';
+            
+            self.registration.showNotification(title, {
+              body: lastMsg.text,
+              icon: "/icon-192.png",
+              badge: "/icon-192.png",
+              tag: payload.characterId,
+              data: {
+                conversationId: payload.characterId,
+                characterName: title
+              }
+            });
           }
-        });
+          
+          // 发送成功消息给所有客户端
+          const clients = await self.clients.matchAll();
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'AI_TASK_COMPLETED',
+              payload: {
+                taskId: payload.taskId,
+                characterId: payload.characterId,
+                messages: newMessages,
+                displayName: payload.displayName,
+              }
+            });
+          });
+          console.log('[Service Worker] AI 任务完成:', payload.taskId);
       }
-      
-      // 发送成功消息给所有客户端
-      const clients = await self.clients.matchAll();
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'AI_TASK_COMPLETED',
-          payload: {
-            taskId: payload.taskId,
-            characterId: payload.characterId,
-            messages: newMessages,
-            displayName: payload.displayName, // 传递备注名给前端
-          }
-        });
-      });
-      
-      console.log('[Service Worker] AI 任务完成:', payload.taskId);
       
     } catch (error) {
       console.error('[Service Worker] AI 任务失败:', error);
@@ -379,7 +399,8 @@ const DB_NAME = 'ToukenRanbuDB';
 const DB_VERSION = 9;
 const STORES = {
   CHAT_MESSAGES: 'chatMessages',
-  CHATS: 'chats'
+  CHATS: 'chats',
+  CHARACTERS: 'characters'
 };
 
 function openDB() {
@@ -458,4 +479,136 @@ async function saveMessageToDB(characterId, newMessages, senderDisplayName) {
   } catch (error) {
     console.error('[Service Worker] DB Save Failed:', error);
   }
+}
+
+async function saveMemoriesToDB(characterId, newMemories) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORES.CHARACTERS], 'readwrite');
+      const store = tx.objectStore(STORES.CHARACTERS);
+      
+      const request = store.get('characters');
+      
+      request.onsuccess = () => {
+        const characters = request.result || [];
+        const charIndex = characters.findIndex(c => c.id === characterId);
+        
+        if (charIndex >= 0) {
+          const char = characters[charIndex];
+          const existingMemories = char.memories || [];
+          // Merge memories
+          char.memories = [...existingMemories, ...newMemories];
+          characters[charIndex] = char;
+          
+          store.put(characters, 'characters');
+          console.log('[Service Worker] Saved', newMemories.length, 'memories for', char.name);
+        }
+      };
+      
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      
+      tx.onerror = () => {
+        console.error('[Service Worker] Memory Transaction failed:', tx.error);
+        db.close();
+        reject(tx.error);
+      };
+    });
+  } catch (error) {
+    console.error('[Service Worker] Memory DB Save Failed:', error);
+  }
+}
+
+function parseMemoryResult(text) {
+    try {
+        let jsonStr = text;
+        const codeBlockMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+        if (codeBlockMatch) {
+            jsonStr = codeBlockMatch[1];
+        } else {
+            const firstBrace = text.indexOf('{');
+            const lastBrace = text.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                jsonStr = text.substring(firstBrace, lastBrace + 1);
+            }
+        }
+
+        const data = JSON.parse(jsonStr);
+        const items = [];
+        const now = new Date().toISOString().split('T')[0];
+
+        // 1. Permanent
+        if (Array.isArray(data.permanent)) {
+            data.permanent.forEach(content => {
+                if (typeof content === 'string' && content.trim()) {
+                    items.push({
+                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                        type: 'permanent',
+                        content: content.trim(),
+                        created_at: now,
+                        active: true,
+                        tags: []
+                    });
+                }
+            });
+        }
+
+        // 2. Event
+        if (Array.isArray(data.event)) {
+            data.event.forEach(event => {
+                if (event && event.content) {
+                    const tags = Array.isArray(event.tags) ? event.tags : (typeof event.tags === 'string' ? [event.tags] : []);
+                    let expires_at = undefined;
+                    if (event.expire_at && /^\d{4}-\d{2}-\d{2}$/.test(event.expire_at)) {
+                        expires_at = event.expire_at;
+                    } else if (event.suggested_expire_days) {
+                        const d = new Date();
+                        d.setDate(d.getDate() + Number(event.suggested_expire_days));
+                        expires_at = d.toISOString().split('T')[0];
+                    }
+                    items.push({
+                        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                        type: 'event',
+                        content: event.content,
+                        created_at: now,
+                        tags: tags,
+                        active: true,
+                        expires_at
+                    });
+                }
+            });
+        }
+
+        // 3. Summary
+        if (data.summary) {
+            const summary = data.summary;
+            if (typeof summary === 'object' && summary.content) {
+                 const tags = Array.isArray(summary.tags) ? summary.tags : (typeof summary.tags === 'string' ? [summary.tags] : []);
+                 items.push({
+                     id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                     type: 'summary',
+                     content: summary.content,
+                     created_at: now,
+                     active: true,
+                     tags: tags
+                 });
+            } else if (typeof summary === 'string') {
+                 items.push({
+                     id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                     type: 'summary',
+                     content: summary,
+                     created_at: now,
+                     active: true,
+                     tags: []
+                 });
+            }
+        }
+        return items;
+    } catch (e) {
+        console.error('[Service Worker] Memory Parse Failed:', e);
+        return [];
+    }
 }
