@@ -167,7 +167,7 @@ self.addEventListener('message', async (event) => {
 
       // 分支逻辑：记忆提取 vs 聊天回复
       if (taskType === 'memory_extraction') {
-          const memories = parseMemoryResult(aiResponse);
+          const memories = parseMemoryResult(aiResponse, payload.referenceDate);
           await saveMemoriesToDB(payload.characterId, memories);
 
           // 发送成功消息给所有客户端
@@ -522,7 +522,7 @@ async function saveMemoriesToDB(characterId, newMemories) {
   }
 }
 
-function parseMemoryResult(text) {
+function parseMemoryResult(text, referenceDateStr) {
     try {
         let jsonStr = text;
         const codeBlockMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
@@ -539,6 +539,9 @@ function parseMemoryResult(text) {
         const data = JSON.parse(jsonStr);
         const items = [];
         const now = new Date().toISOString().split('T')[0];
+        
+        // 使用参考日期作为计算基准，如果没有则默认为当前时间
+        const baseDate = referenceDateStr ? new Date(referenceDateStr) : new Date();
 
         // 1. Permanent
         if (Array.isArray(data.permanent)) {
@@ -565,7 +568,7 @@ function parseMemoryResult(text) {
                     if (event.expire_at && /^\d{4}-\d{2}-\d{2}$/.test(event.expire_at)) {
                         expires_at = event.expire_at;
                     } else if (event.suggested_expire_days) {
-                        const d = new Date();
+                        const d = new Date(baseDate);
                         d.setDate(d.getDate() + Number(event.suggested_expire_days));
                         expires_at = d.toISOString().split('T')[0];
                     }
