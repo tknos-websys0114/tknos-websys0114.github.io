@@ -185,6 +185,50 @@ self.addEventListener('message', async (event) => {
           });
           console.log('[Service Worker] 记忆提取任务完成:', payload.taskId);
 
+      } else if (taskType === 'shop_generation') {
+          // 尝试解析 JSON
+          let shopItems = [];
+          try {
+            let jsonStr = aiResponse;
+            const codeBlockMatch = aiResponse.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+            if (codeBlockMatch) {
+                jsonStr = codeBlockMatch[1];
+            } else {
+                const firstBrace = aiResponse.indexOf('{');
+                const lastBrace = aiResponse.lastIndexOf('}');
+                if (firstBrace !== -1 && lastBrace !== -1) {
+                    jsonStr = aiResponse.substring(firstBrace, lastBrace + 1);
+                }
+            }
+            const parsed = JSON.parse(jsonStr);
+            shopItems = parsed.items || [];
+            
+            // 为每个商品生成唯一 ID
+            shopItems = shopItems.map(item => ({
+                ...item,
+                id: item.id || `gen-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+                category: item.category || 'recommended' // Fallback
+            }));
+
+          } catch (e) {
+            console.error('[Service Worker] Shop items parse failed', e);
+            throw new Error('商品生成格式错误');
+          }
+
+          // 发送成功消息给所有客户端
+          const clients = await self.clients.matchAll();
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'AI_TASK_COMPLETED',
+              payload: {
+                taskId: payload.taskId,
+                taskType: 'shop_generation',
+                result: { shopItems }
+              }
+            });
+          });
+          console.log('[Service Worker] 万屋商品生成任务完成:', payload.taskId);
+
       } else {
           // 默认：聊天回复逻辑
           
