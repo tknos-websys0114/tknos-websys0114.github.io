@@ -440,7 +440,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // IndexedDB Helper Functions
 const DB_NAME = 'ToukenRanbuDB';
-const DB_VERSION = 9;
+const DB_VERSION = 10; // 必须与主应用保持一致
 const STORES = {
   CHAT_MESSAGES: 'chatMessages',
   CHATS: 'chats',
