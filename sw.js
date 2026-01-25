@@ -229,9 +229,9 @@ self.addEventListener('message', async (event) => {
           });
           console.log('[Service Worker] 万屋商品生成任务完成:', payload.taskId);
 
-      } else if (taskType === 'whisper_chat_reply') {
+      } else if (taskType === 'whisper_chat_reply' || taskType === 'memory_summary') {
           // 传送模块：纯文本响应，不需要 JSON 解析
-          console.log('[Service Worker] 传送模块回复:', aiResponse);
+          console.log(`[Service Worker] ${taskType} 纯文本回复:`, aiResponse);
           
           // 直接将纯文本响应发送给客户端
           const clients = await self.clients.matchAll();
@@ -241,12 +241,12 @@ self.addEventListener('message', async (event) => {
               payload: {
                 taskId: payload.taskId,
                 characterId: payload.characterId,
-                taskType: 'whisper_chat_reply',
+                taskType: taskType,
                 result: aiResponse.trim() // 返回纯文本
               }
             });
           });
-          console.log('[Service Worker] 传送回复任务完成:', payload.taskId);
+          console.log(`[Service Worker] ${taskType} 任务完成:`, payload.taskId);
 
       } else {
           // 默认：聊天回复逻辑
