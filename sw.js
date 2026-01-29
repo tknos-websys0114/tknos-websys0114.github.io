@@ -209,6 +209,9 @@ self.addEventListener('message', async (event) => {
                 id: item.id || `gen-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
                 category: item.category || 'recommended' // Fallback
             }));
+            
+            // 保存商品到 IndexedDB (万屋双重写入机制)
+            await saveShopItemsToDB(shopItems);
 
           } catch (e) {
             console.error('[Service Worker] Shop items parse failed', e);
@@ -232,6 +235,31 @@ self.addEventListener('message', async (event) => {
       } else if (taskType === 'whisper_chat_reply' || taskType === 'memory_summary') {
           // 传送模块：纯文本响应，不需要 JSON 解析
           console.log(`[Service Worker] ${taskType} 纯文本回复:`, aiResponse);
+          const replyText = aiResponse.trim();
+          
+          let savedMessage = null;
+          // 如果是 WhisperChat 回复，执行双重写入机制的后台部分
+          if (taskType === 'whisper_chat_reply') {
+            savedMessage = await saveWhisperMessageToDB(payload.characterId, replyText);
+          } else if (taskType === 'memory_summary') {
+            // Memory Summary 双重写入：构建 Memory 对象并保存
+            const now = new Date();
+            const memoryId = `mem_${now.getTime()}_${Math.random().toString(36).substr(2, 5)}`;
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            const newMemory = {
+                id: memoryId,
+                type: 'date', // WhisperChat 总结默认为 date 类型
+                content: replyText,
+                created_at: todayStr,
+                active: true,
+                tags: ['自动总结']
+            };
+            
+            await saveMemoriesToDB(payload.characterId, [newMemory]);
+            savedMessage = newMemory; // 复用 savedMessage 变量传递给前端
+            console.log('[Service Worker] Saved memory summary to DB:', memoryId);
+          }
           
           // 直接将纯文本响应发送给客户端
           const clients = await self.clients.matchAll();
@@ -242,7 +270,8 @@ self.addEventListener('message', async (event) => {
                 taskId: payload.taskId,
                 characterId: payload.characterId,
                 taskType: taskType,
-                result: aiResponse.trim() // 返回纯文本
+                result: replyText, // 返回纯文本
+                message: savedMessage // 返回完整的消息对象（包含ID），供前端同步
               }
             });
           });
@@ -396,7 +425,7 @@ self.addEventListener('message', async (event) => {
             });
           }
           
-          // 发送成功消息给所有客户端
+          // ���送成功消息给所有客户端
           const clients = await self.clients.matchAll();
           clients.forEach(client => {
             client.postMessage({
@@ -463,7 +492,8 @@ const DB_VERSION = 10; // 必须与主应用保持一致
 const STORES = {
   CHAT_MESSAGES: 'chatMessages',
   CHATS: 'chats',
-  CHARACTERS: 'characters'
+  CHARACTERS: 'characters',
+  MISC: 'misc'
 };
 
 function openDB() {
@@ -582,6 +612,96 @@ async function saveMemoriesToDB(characterId, newMemories) {
     });
   } catch (error) {
     console.error('[Service Worker] Memory DB Save Failed:', error);
+  }
+}
+
+// 万屋商品保存逻辑（双重写入机制的一部分）
+async function saveShopItemsToDB(newItems) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORES.MISC], 'readwrite');
+      const store = tx.objectStore(STORES.MISC);
+      
+      // 读取现有商品
+      const request = store.get('shop_products');
+      
+      request.onsuccess = () => {
+        const currentProducts = request.result || [];
+        
+        if (newItems.length > 0) {
+           const categoryToReplace = newItems[0].category;
+           let nextProducts = [...currentProducts];
+           
+           if (categoryToReplace === 'recommended') {
+               // 替换现有推荐商品
+               nextProducts = currentProducts.filter(p => p.category !== 'recommended');
+               nextProducts = [...newItems, ...nextProducts];
+           } else {
+               // 替换同类商品
+               nextProducts = currentProducts.filter(p => p.category !== categoryToReplace);
+               nextProducts = [...newItems, ...nextProducts];
+           }
+           
+           store.put(nextProducts, 'shop_products');
+           console.log('[Service Worker] Saved shop items to DB');
+        }
+      };
+      
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      
+      tx.onerror = () => {
+        console.error('[Service Worker] Shop Transaction failed:', tx.error);
+        db.close();
+        reject(tx.error);
+      };
+    });
+  } catch (error) {
+    console.error('[Service Worker] Shop DB Save Failed:', error);
+  }
+}
+
+// WhisperChat 保存逻辑（双重写入机制）
+async function saveWhisperMessageToDB(characterId, text) {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORES.CHATS], 'readwrite');
+      const store = tx.objectStore(STORES.CHATS);
+      const key = `whisper_chat_messages_${characterId}`;
+      
+      const request = store.get(key);
+      request.onsuccess = () => {
+        const messages = request.result || [];
+        // 构建与 WhisperChat.tsx 一致的消息对象
+        const newMessage = {
+            id: `${Date.now()}_ai`, // 确保ID唯一且符合前端格式
+            text: text,
+            sender: 'character',
+            timestamp: new Date() // 使用对象格式，IDB支持
+        };
+        store.put([...messages, newMessage], key);
+        console.log('[Service Worker] Saved WhisperChat message');
+        // 返回保存的消息对象，以便前端同步使用相同的ID
+        resolve(newMessage);
+      };
+      
+      tx.oncomplete = () => {
+        db.close();
+      };
+      
+      tx.onerror = () => {
+        console.error('[Service Worker] WhisperChat Save Transaction failed:', tx.error);
+        db.close();
+        reject(tx.error);
+      };
+    });
+  } catch (error) {
+    console.error('[Service Worker] WhisperChat DB Save Failed:', error);
+    return null;
   }
 }
 
