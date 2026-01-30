@@ -425,7 +425,7 @@ self.addEventListener('message', async (event) => {
             });
           }
           
-          // ���送成功消息给所有客户端
+          // �����送成功消息给所有客户端
           const clients = await self.clients.matchAll();
           clients.forEach(client => {
             client.postMessage({
@@ -451,6 +451,7 @@ self.addEventListener('message', async (event) => {
           type: 'AI_TASK_FAILED',
           payload: {
             taskId: payload.taskId,
+            taskType: payload.taskType,
             characterId: payload.characterId,
             error: error.message,
           }
