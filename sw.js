@@ -355,6 +355,7 @@ self.addEventListener('message', async (event) => {
               return {
                 id: `${Date.now()}-${index}`,
                 text: description,
+                translation: msg.translation,
                 senderId: 'character',
                 senderName: payload.characterName,
                 timestamp: new Date().toISOString(),
@@ -383,6 +384,7 @@ self.addEventListener('message', async (event) => {
             const message = {
               id: `${Date.now()}-${index}`,
               text: msg.stickerId ? '[表情]' : (msg.content || ''),
+              translation: msg.translation,
               senderId: 'character',
               senderName: payload.characterName,
               timestamp: new Date().toISOString(),
