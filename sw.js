@@ -80,6 +80,21 @@ self.addEventListener('message', async (event) => {
     self.skipWaiting();
     return;
   }
+
+  // 智能清理：接收前端发来的清理特定角色通知的请求
+  if (type === 'CLEAR_NOTIFICATIONS' && payload && payload.characterId) {
+    try {
+      const notifications = await self.registration.getNotifications();
+      for (const notification of notifications) {
+        if (notification.data && notification.data.conversationId === payload.characterId) {
+          notification.close();
+        }
+      }
+    } catch (e) {
+      console.warn('[Service Worker] 清理通知失败', e);
+    }
+    return;
+  }
   
   // 处理 AI 任务
   if (type === 'PROCESS_AI_TASK') {
@@ -410,21 +425,52 @@ self.addEventListener('message', async (event) => {
           const isVisible = allClients.some(client => client.visibilityState === 'visible');
 
           // 如果应用在后台，发送系统通知
-          const ENABLE_NOTIFICATIONS = false;
-          if (ENABLE_NOTIFICATIONS && !isVisible) {
-            const lastMsg = newMessages[newMessages.length - 1];
-            const title = payload.displayName || payload.characterName || '新消息';
-            
-            self.registration.showNotification(title, {
-              body: lastMsg.text,
-              icon: "/icon-192.png",
-              badge: "/icon-192.png",
-              tag: payload.characterId,
-              data: {
-                conversationId: payload.characterId,
-                characterName: title
-              }
+          let enableNotifications = false;
+          try {
+            const db = await openDB();
+            enableNotifications = await new Promise((resolve) => {
+              const tx = db.transaction([STORES.CHATS], 'readonly');
+              const store = tx.objectStore(STORES.CHATS);
+              const req = store.get('chat_settings');
+              req.onsuccess = () => {
+                const settings = req.result;
+                resolve(settings && settings.enableNotifications === true);
+              };
+              req.onerror = () => resolve(false);
             });
+          } catch (e) {
+            console.warn('[Service Worker] Failed to read chat settings for notifications', e);
+          }
+
+          // 确保只为私聊消息（标准的聊天任务）发送推送通知
+          const isPrivateChat = !taskType || taskType === 'private_chat_reply';
+          if (enableNotifications && !isVisible && isPrivateChat) {
+            const title = payload.displayName || payload.characterName || '新消息';
+            let avatarBase64 = null;
+            try {
+              avatarBase64 = await getCharacterAvatarBase64(payload.characterId);
+            } catch(e) {}
+            const iconUrl = avatarBase64 || "/icon-192.png";
+            
+            for (let i = 0; i < newMessages.length; i++) {
+              const msg = newMessages[i];
+              
+              if (i > 0) {
+                // 每条消息之间加一点延迟，模拟打字发送时间并避免通知覆盖
+                await new Promise(res => setTimeout(res, 1500)); 
+              }
+              
+              await self.registration.showNotification(title, {
+                body: msg.text,
+                icon: iconUrl,
+                badge: "/icon-192.png",
+                tag: `${payload.characterId}-${msg.id || Date.now()}-${i}`, // 确保tag唯一，保证每条都会弹出
+                data: {
+                  conversationId: payload.characterId,
+                  characterName: title
+                }
+              });
+            }
           }
           
           // �����送成功消息给所有客户端
@@ -469,7 +515,19 @@ self.addEventListener('notificationclick', (event) => {
   const { conversationId, characterName } = event.notification.data || {};
   
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    (async () => {
+      // 智能清理逻辑：清除该角色的所有堆积通知
+      if (conversationId) {
+        const notifications = await self.registration.getNotifications();
+        for (const notification of notifications) {
+          // 如果通知属于同一个角色（通过 conversationId 判断），则将其关闭
+          if (notification.data && notification.data.conversationId === conversationId) {
+            notification.close();
+          }
+        }
+      }
+
+      const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       // 1. 尝试找到已经打开的窗口并聚焦
       for (const client of clientList) {
         if (client.url && 'focus' in client) {
@@ -485,7 +543,7 @@ self.addEventListener('notificationclick', (event) => {
       if (self.clients.openWindow) {
         return self.clients.openWindow(`/?chatId=${conversationId}`);
       }
-    })
+    })()
   );
 });
 
@@ -505,6 +563,85 @@ function openDB() {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
   });
+}
+
+async function getCharacterAvatarBase64(characterId) {
+  try {
+    const db = await openDB();
+    const avatarKey = await new Promise((resolve) => {
+      const tx = db.transaction([STORES.CHARACTERS], 'readonly');
+      const store = tx.objectStore(STORES.CHARACTERS);
+      const req = store.get('characters');
+      req.onsuccess = () => {
+        const chars = req.result || [];
+        const char = chars.find(c => c.id === characterId);
+        resolve(char ? char.avatar : null);
+      };
+      req.onerror = () => resolve(null);
+    });
+
+    if (!avatarKey) return null;
+
+    if (typeof avatarKey === 'string' && avatarKey.startsWith('data:')) {
+      return avatarKey;
+    }
+
+    return new Promise((resolve) => {
+      const request = indexedDB.open('DesktopImagesDB', 3);
+      request.onerror = () => resolve(null);
+      request.onsuccess = () => {
+        const imageDb = request.result;
+        if (!imageDb.objectStoreNames.contains('images')) {
+          imageDb.close();
+          resolve(null);
+          return;
+        }
+
+        const tx = imageDb.transaction(['images'], 'readonly');
+        const store = tx.objectStore('images');
+        
+        // Use the proper category format if possible, fallback to old key
+        const newKey = `avatars/${avatarKey}`;
+        const getReq = store.get(newKey);
+        
+        getReq.onsuccess = async () => {
+          let blob = getReq.result;
+          
+          const processBlob = async (b) => {
+            if (!b) return resolve(null);
+            if (typeof b === 'string') return resolve(b);
+            try {
+              const buffer = await b.arrayBuffer();
+              const bytes = new Uint8Array(buffer);
+              let binary = '';
+              for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+              }
+              const base64 = btoa(binary);
+              resolve(`data:${b.type || 'image/png'};base64,${base64}`);
+            } catch (err) {
+              console.warn('[Service Worker] Base64 conversion failed', err);
+              resolve(null);
+            }
+          };
+
+          if (!blob && newKey !== avatarKey) {
+            const oldReq = store.get(avatarKey);
+            oldReq.onsuccess = () => processBlob(oldReq.result);
+            oldReq.onerror = () => resolve(null);
+          } else {
+            processBlob(blob);
+          }
+        };
+        
+        getReq.onerror = () => resolve(null);
+        tx.oncomplete = () => imageDb.close();
+      };
+    });
+  } catch (e) {
+    console.warn('[Service Worker] Failed to get avatar base64', e);
+    return null;
+  }
 }
 
 async function saveMessageToDB(characterId, newMessages, senderDisplayName) {
